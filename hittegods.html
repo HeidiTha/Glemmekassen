@@ -487,47 +487,7 @@
   .toast.error { border-color: rgba(255,77,109,0.4); color: var(--danger); }
   .toast.success { border-color: rgba(0,229,160,0.4); color: var(--accent); }
 
-  /* Twilio config */
-  .config-panel {
-    background: rgba(255,200,0,0.05);
-    border: 1px solid rgba(255,200,0,0.2);
-    border-radius: 14px;
-    padding: 16px;
-    margin: 0 16px 16px;
-  }
-  .config-panel summary {
-    font-size: 12px;
-    color: rgba(255,200,0,0.8);
-    cursor: pointer;
-    letter-spacing: 0.5px;
-    font-weight: 500;
-  }
-  .config-panel .config-fields { margin-top: 14px; }
-  .config-panel input {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 10px;
-    padding: 10px 14px;
-    color: var(--text);
-    font-family: monospace;
-    font-size: 13px;
-    margin-bottom: 8px;
-    outline: none;
-  }
-  .config-panel input:focus { border-color: rgba(255,200,0,0.5); }
-  .config-save {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255,200,0,0.15);
-    border: 1px solid rgba(255,200,0,0.3);
-    border-radius: 10px;
-    color: rgba(255,220,0,0.9);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 4px;
-  }
+  
   .api-key-banner {
     background: rgba(0,229,160,0.07);
     border: 1.5px solid rgba(0,229,160,0.3);
@@ -729,9 +689,13 @@
       <div class="location-spinner" id="loc-spinner"></div>
     </div>
 
+    <div id="gps-fallback" style="display:none; margin-bottom:12px; padding:12px 16px; background:rgba(255,170,0,0.1); border:1px solid rgba(255,170,0,0.3); border-radius:12px; font-size:13px; color:#ffaa00; line-height:1.5;">
+      📵 GPS ikke tilgjengelig. Skriv inn stedet manuelt nedenfor.
+    </div>
+
     <div class="field">
-      <label>STEDSNAVN (valgfritt – presiserer posisjonen)</label>
-      <input type="text" id="place-input" placeholder="f.eks. Ila skole, garderobe" autocomplete="off">
+      <label>STED (skole, hall, adresse)</label>
+      <input type="text" id="place-input" placeholder="f.eks. Ris ungdomsskole" autocomplete="off">
     </div>
 
     <div class="nav-row">
@@ -792,38 +756,53 @@
 
   <!-- Success -->
   <div id="success-screen">
-    <div class="success-icon">✓</div>
-    <div class="success-title">Varsling sendt!</div>
-    <div class="success-desc" id="success-desc">SMS er sendt. Eieren vil snart få beskjed!</div>
 
-    <div id="counter-box" style="margin: 20px 16px 12px; background: var(--surface); border: 1px solid rgba(0,229,160,0.2); border-radius: 18px; padding: 20px; text-align:center;">
-      <div style="font-size:12px; color:var(--muted); margin-bottom:8px; letter-spacing:0.5px; text-transform:uppercase;">Varsler sendt i testperioden</div>
-      <div id="counter-number" style="font-family:'Syne',sans-serif; font-size:52px; font-weight:800; color:var(--accent); line-height:1; margin-bottom:6px;">1</div>
-      <div style="font-size:13px; color:var(--muted);">Glemmekassen er under utprøving – takk for at du hjelper! 🙌</div>
+    <!-- Hero section -->
+    <div style="text-align:center; padding: 40px 24px 28px;">
+      <div style="width:80px; height:80px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 20px; font-size:36px; box-shadow: 0 0 0 16px rgba(0,229,160,0.1);">✓</div>
+      <div style="font-family:'Syne',sans-serif; font-size:30px; font-weight:800; color:var(--text); margin-bottom:6px;">Varsling sendt!</div>
+      <div class="success-desc" id="success-desc" style="font-size:14px; color:var(--muted);">SMS er sendt. Eieren vil snart få beskjed.</div>
     </div>
 
-    <div style="margin: 0 16px 16px; background: var(--surface2); border-radius: 16px; padding: 18px 20px;">
-      <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:6px;">📬 Gi tilbakemelding</div>
-      <div style="font-size:13px; color:var(--muted); line-height:1.5;">Fikk eieren gjenstanden? Svar direkte på SMS-en, eller send melding til <span style="color:var(--accent)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="96fef3fff2ffb8e2fef7e3faf9e1d6f1fbf7fffab8f5f9fb">[email&#160;protected]</a></span></div>
+    <!-- Counter card -->
+    <div id="counter-box" style="margin: 0 16px 16px; background: linear-gradient(135deg, #0d2040 0%, #0a1628 100%); border: 1px solid rgba(0,229,160,0.25); border-radius: 24px; padding: 28px 24px; text-align:center; position:relative; overflow:hidden;">
+      <div style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:rgba(0,229,160,0.05); border-radius:50%;"></div>
+      <div style="position:absolute; bottom:-30px; left:-30px; width:160px; height:160px; background:rgba(0,229,160,0.03); border-radius:50%;"></div>
+      <div style="font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px;">Gjenstander varslet</div>
+      <div id="counter-number" style="font-family:'Syne',sans-serif; font-size:88px; font-weight:800; color:var(--accent); line-height:0.9; margin-bottom:14px; text-shadow: 0 0 40px rgba(0,229,160,0.3);">1</div>
+      <div style="width:40px; height:2px; background:rgba(0,229,160,0.3); margin: 0 auto 14px; border-radius:2px;"></div>
+      <div style="font-size:13px; color:rgba(255,255,255,0.45); line-height:1.5;">Glemmekassen er under utprøving<br>— takk for at du hjelper! 🙌</div>
     </div>
 
-    <button class="new-report-btn" onclick="resetApp()">+ Ny rapport</button>
+    <!-- Feedback card -->
+    <div style="margin: 0 16px 16px; background: var(--surface2); border-radius: 20px; padding: 20px;">
+      <div style="font-size:12px; font-weight:600; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px;">Gi tilbakemelding</div>
+      <div style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Fikk eieren gjenstanden tilbake? Det hjelper oss å bli bedre!</div>
+      <a href="sms:95276157" style="display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:14px; padding:14px 16px; margin-bottom:8px; text-decoration:none; border: 1px solid rgba(255,255,255,0.05);">
+        <span style="width:36px; height:36px; background:rgba(0,229,160,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">📱</span>
+        <div>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:2px;">Send SMS</div>
+          <div style="color:var(--accent); font-size:14px; font-weight:600;">95276157</div>
+        </div>
+      </a>
+      <a id="feedback-email" style="display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:14px; padding:14px 16px; text-decoration:none; cursor:pointer; border: 1px solid rgba(255,255,255,0.05);" onclick="window.location='mai'+'lto:'+'heidi.thaulow'+'@'+'gmail.com'">
+        <span style="width:36px; height:36px; background:rgba(0,229,160,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">✉️</span>
+        <div>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:2px;">Send e-post</div>
+          <div style="color:var(--accent); font-size:14px; font-weight:600;">heidi.thaulow&#64;gmail.com</div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Next action -->
+    <div style="padding: 0 16px 40px;">
+      <button class="new-report-btn" onclick="resetApp()" style="width:100%; padding:18px; font-size:16px; font-weight:700; border-radius:16px;">📦 Skann neste gjenstand</button>
+    </div>
+
   </div>
 </div>
 
-<!-- Konfig -->
-<details class="config-panel" id="config-panel" open>
-  <summary>⚙️ Sveve SMS-konfigurasjon</summary>
-  <div class="config-fields">
-    <label style="font-size:11px; color:rgba(255,200,0,0.7); display:block; margin:10px 0 4px;">SVEVE – Brukernavn</label>
-    <input type="text" id="sveve-user" placeholder="brukernavn fra sveve.no">
-    <label style="font-size:11px; color:rgba(255,200,0,0.7); display:block; margin:10px 0 4px;">SVEVE – Passord</label>
-    <input type="password" id="sveve-pass" placeholder="passord fra sveve.no">
-    <label style="font-size:11px; color:rgba(255,200,0,0.7); display:block; margin:10px 0 4px;">AVSENDERNAVN (maks 11 tegn)</label>
-    <input type="text" id="sveve-sender" placeholder="Glemmekassen" maxlength="11">
-    <button class="config-save" onclick="saveConfig()">💾 Lagre konfig</button>
-  </div>
-</details>
+<!-- Konfig fjernet – Sveve-nøkler ligger i Supabase -->
 
 <div class="toast" id="toast"></div>
 
@@ -841,28 +820,16 @@ const state = {
   cameraOpen: false
 };
 
-// ── Config (Sveve) ─────────────────────────────────────
-let sveve = {
-  user: localStorage.getItem('sveve_user') || '',
-  pass: localStorage.getItem('sveve_pass') || '',
-  sender: localStorage.getItem('sveve_sender') || 'Glemmekassen'
-};
-let anthropicKey = localStorage.getItem('anthropic_key') || '';
+// ── Config (Sveve – nøkler i Supabase) ────────────────
+const sveve = { sender: 'Glemmekassen' };
 
-function saveConfig() {
-  sveve.user = document.getElementById('sveve-user').value.trim();
-  sveve.pass = document.getElementById('sveve-pass').value.trim();
-  sveve.sender = document.getElementById('sveve-sender').value.trim() || 'Glemmekassen';
-  localStorage.setItem('sveve_user', sveve.user);
-  localStorage.setItem('sveve_pass', sveve.pass);
-  localStorage.setItem('sveve_sender', sveve.sender);
-  showToast('✅ Konfig lagret', 'success');
-}
+
 
 window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('sveve-user').value = sveve.user;
-  document.getElementById('sveve-pass').value = sveve.pass;
-  document.getElementById('sveve-sender').value = sveve.sender;
+  // Clear any old Twilio/Sveve credentials that may be cached
+  ['twilio_sid','twilio_token','twilio_from','sveve_user','sveve_pass','sveve_sender','anthropic_key'].forEach(k => localStorage.removeItem(k));
+
+
 
   // Vis banner hvis iPhone men ikke Safari
   const ua = navigator.userAgent;
@@ -879,9 +846,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
 async function autoStartCamera() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-    });
+    const constraints = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      ? { video: { facingMode: { exact: 'environment' } } }
+      : { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
     state.stream = stream;
     state.cameraOpen = true;
     const video = document.getElementById('video');
@@ -898,6 +866,7 @@ async function autoStartCamera() {
 
 function autoStartGPS() {
   if (!navigator.geolocation) return;
+  // iOS requires HTTPS - already satisfied by GitHub Pages
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
       state.lat = pos.coords.latitude;
@@ -917,7 +886,13 @@ function autoStartGPS() {
       locVal.textContent = state.locationText;
       row.classList.add('has-location');
     },
-    () => {}, // Stille feil – brukeren kan hente manuelt
+    () => {
+      // GPS feilet – vis fallback-melding
+      const fb = document.getElementById('gps-fallback');
+      if (fb) fb.style.display = 'block';
+      const locVal = document.getElementById('loc-value');
+      if (locVal) locVal.textContent = 'Ikke tilgjengelig';
+    }
     { timeout: 10000, enableHighAccuracy: true }
   );
 }
@@ -950,9 +925,10 @@ async function startCamera() {
     return;
   }
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-    });
+    const constraints = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      ? { video: { facingMode: { exact: 'environment' } } }
+      : { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
     state.stream = stream;
     state.cameraOpen = true;
     const video = document.getElementById('video');
@@ -1042,7 +1018,7 @@ async function runOCR(dataUrl) {
   try {
     const text = await callClaude(
       dataUrl,
-      'This is a photo of a name tag or clothing label from lost & found. Extract the phone number from this image. Return ONLY a JSON object like: {"phone": "91234567", "name": "Ola"} — phone digits only (no spaces/dashes), name only if visible. If no phone number found, return {"phone": "", "name": ""}. No other text.'
+      'This is a photo of a name tag or clothing label. Extract the phone number. It may include a +47 or 47 country code prefix — include it as-is. Return ONLY JSON: {"phone": "91234567", "name": "Ola"} — digits and optional +47 prefix only, name only if clearly visible. If no number found: {"phone": "", "name": ""}. No other text.'
     );
 
     let parsed = { phone: '', name: '' };
@@ -1056,7 +1032,10 @@ async function runOCR(dataUrl) {
     goToStep(1);
     const input = document.getElementById('phone-input');
     if (parsed.phone) {
-      const digits = parsed.phone.replace(/\D/g, '');
+      // Strip leading country code: +47, 0047, 47 if followed by 8 digits
+      let digits = parsed.phone.replace(/\D/g, '');
+      if (digits.length === 10 && digits.startsWith('47')) digits = digits.slice(2);
+      if (digits.length === 12 && digits.startsWith('0047')) digits = digits.slice(4);
       const valid = digits.length === 8 && /^[49]/.test(digits);
       input.value = digits;
       liveValidatePhone(input);
@@ -1075,14 +1054,21 @@ async function runOCR(dataUrl) {
   }
 }
 
+function normalizeNorwegian(raw) {
+  let d = raw.replace(/\D/g, '');
+  if (d.startsWith('0047') && d.length === 12) d = d.slice(4);
+  else if (d.startsWith('47') && d.length === 10) d = d.slice(2);
+  return d;
+}
+
 function liveValidatePhone(input) {
-  const digits = input.value.replace(/\D/g, '');
+  const digits = normalizeNorwegian(input.value);
   const hint = document.getElementById('phone-hint');
   if (!digits) { hint.textContent = ''; return; }
   if (digits.length < 8) {
     hint.innerHTML = '<span style="color:#ffaa00">⚠️ For kort – norske nummer har 8 siffer</span>';
   } else if (digits.length > 8) {
-    hint.innerHTML = '<span style="color:#ff4d6d">❌ For langt – ' + digits.length + ' siffer (skal være 8)</span>';
+    hint.innerHTML = '<span style="color:#ff4d6d">❌ Sjekk nummeret – ble det med landskode (+47)?</span>';
   } else if (!/^[49]/.test(digits)) {
     hint.innerHTML = '<span style="color:#ffaa00">⚠️ Norske mobilnummer starter med 4 eller 9</span>';
   } else {
@@ -1098,9 +1084,9 @@ function formatPhone(num) {
 
 // ── Phone validation ───────────────────────────────────
 function validatePhone() {
-  const raw = document.getElementById('phone-input').value.replace(/\D/g, '');
+  const raw = normalizeNorwegian(document.getElementById('phone-input').value);
   if (raw.length !== 8) {
-    showToast('Telefonnummer må være 8 siffer', 'error');
+    showToast('Telefonnummer må være 8 siffer (uten +47)', 'error');
     return;
   }
   if (!/^[49]/.test(raw)) {
@@ -1117,9 +1103,10 @@ let itemStream = null;
 async function autoStartItemCamera() {
   if (itemStream || state.itemPhotoDataUrl) return;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-    });
+    const constraints = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      ? { video: { facingMode: { exact: 'environment' } } }
+      : { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
     itemStream = stream;
     const video = document.getElementById('item-video');
     video.srcObject = stream;
@@ -1134,9 +1121,10 @@ async function autoStartItemCamera() {
 async function startItemCamera() {
   if (itemStream) { captureItemPhoto(); return; }
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-    });
+    const constraints = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      ? { video: { facingMode: { exact: 'environment' } } }
+      : { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
     itemStream = stream;
     const video = document.getElementById('item-video');
     video.srcObject = stream;
@@ -1285,7 +1273,7 @@ function goToSummary() {
   const locationPart = state.placeName || state.locationText;
   const smsTxt = `Hei! Vi fant en gjenstand${itemPart} på ${locationPart} som kan tilhøre deg. 📍${mapLink ? ' ' + mapLink : ' ' + locationPart}
 
-Glemmekassen er en ny gratis tjeneste som varsler eiere av gjenglemt utstyr. Fikk du gjenstanden din tilbake? Svar på denne meldingen – din tilbakemelding hjelper oss å bli bedre! 🙏
+Glemmekassen er en ny gratis tjeneste som varsler eiere av gjenglemt utstyr. Fikk du gjenstanden din tilbake? Send gjerne tilbakemelding – det hjelper oss å bli bedre! 📲 95276157 eller heidi.thaulow@gmail.com
 
 – Glemmekassen`;
 
@@ -1297,12 +1285,6 @@ Glemmekassen er en ny gratis tjeneste som varsler eiere av gjenglemt utstyr. Fik
 
 // ── Send SMS ───────────────────────────────────────────
 async function sendSMS() {
-  if (!sveve.user || !sveve.pass) {
-    showToast('⚠️ Ingen Sveve-konfig – viser demo', 'error');
-    setTimeout(() => showSuccess(true), 800);
-    return;
-  }
-
   const btn = document.getElementById('send-btn');
   btn.disabled = true;
   btn.textContent = '⏳ Sender...';
@@ -1318,8 +1300,6 @@ async function sendSMS() {
       },
       body: JSON.stringify({
         action: 'sms',
-        user: sveve.user,
-        passwd: sveve.pass,
         sender: sveve.sender,
         to: toNumber,
         msg: state.smsText
@@ -1455,6 +1435,12 @@ function showToast(msg, type) {
 <script>
 // Service Worker
 if ('serviceWorker' in navigator) {
+  // Tving avregistrering av gamle service workers og slett all cache
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  });
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+  // Registrer fersk
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/Glemmekassen/sw.js').catch(() => {});
   });
