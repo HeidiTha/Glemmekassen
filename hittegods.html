@@ -900,7 +900,7 @@ function autoStartGPS() {
       if (fb) fb.style.display = 'block';
       const locVal = document.getElementById('loc-value');
       if (locVal) locVal.textContent = 'Ikke tilgjengelig';
-    }
+    },
     { timeout: 10000, enableHighAccuracy: true }
   );
 }
