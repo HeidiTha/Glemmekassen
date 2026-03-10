@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a1628">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Glemmekassen</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="/Glemmekassen/manifest.json">
 <meta name="apple-mobile-web-app-title" content="Glemmekassen">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -804,7 +804,7 @@
 
     <div style="margin: 0 16px 16px; background: var(--surface2); border-radius: 16px; padding: 18px 20px;">
       <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:6px;">📬 Gi tilbakemelding</div>
-      <div style="font-size:13px; color:var(--muted); line-height:1.5;">Fikk eieren gjenstanden? Svar direkte på SMS-en, eller send melding til <span style="color:var(--accent)">heidi.thaulow@gmail.com</span></div>
+      <div style="font-size:13px; color:var(--muted); line-height:1.5;">Fikk eieren gjenstanden? Svar direkte på SMS-en, eller send melding til <span style="color:var(--accent)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="96fef3fff2ffb8e2fef7e3faf9e1d6f1fbf7fffab8f5f9fb">[email&#160;protected]</a></span></div>
     </div>
 
     <button class="new-report-btn" onclick="resetApp()">+ Ny rapport</button>
@@ -813,21 +813,21 @@
 
 <!-- Konfig -->
 <details class="config-panel" id="config-panel" open>
-  <summary>⚙️ Twilio-konfigurasjon (kun for testere)</summary>
+  <summary>⚙️ Sveve SMS-konfigurasjon</summary>
   <div class="config-fields">
-    <label style="font-size:11px; color:rgba(255,200,0,0.7); display:block; margin:10px 0 4px;">TWILIO – Account SID</label>
-    <input type="text" id="twilio-sid" placeholder="ACxxxxxxxx...">
-    <label style="font-size:11px; color:rgba(255,200,0,0.7); display:block; margin:10px 0 4px;">TWILIO – Auth Token</label>
-    <input type="password" id="twilio-token" placeholder="Auth Token">
-    <label style="font-size:11px; color:rgba(255,200,0,0.7); display:block; margin:10px 0 4px;">TWILIO – Avsendernummer</label>
-    <input type="text" id="twilio-from" placeholder="+4700000000">
+    <label style="font-size:11px; color:rgba(255,200,0,0.7); display:block; margin:10px 0 4px;">SVEVE – Brukernavn</label>
+    <input type="text" id="sveve-user" placeholder="brukernavn fra sveve.no">
+    <label style="font-size:11px; color:rgba(255,200,0,0.7); display:block; margin:10px 0 4px;">SVEVE – Passord</label>
+    <input type="password" id="sveve-pass" placeholder="passord fra sveve.no">
+    <label style="font-size:11px; color:rgba(255,200,0,0.7); display:block; margin:10px 0 4px;">AVSENDERNAVN (maks 11 tegn)</label>
+    <input type="text" id="sveve-sender" placeholder="Glemmekassen" maxlength="11">
     <button class="config-save" onclick="saveConfig()">💾 Lagre konfig</button>
   </div>
 </details>
 
 <div class="toast" id="toast"></div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── State ──────────────────────────────────────────────
 const state = {
   phone: '',
@@ -841,28 +841,28 @@ const state = {
   cameraOpen: false
 };
 
-// ── Config (Twilio) ────────────────────────────────────
-let twilioConfig = {
-  sid: localStorage.getItem('twilio_sid') || '',
-  token: localStorage.getItem('twilio_token') || '',
-  from: localStorage.getItem('twilio_from') || ''
+// ── Config (Sveve) ─────────────────────────────────────
+let sveve = {
+  user: localStorage.getItem('sveve_user') || '',
+  pass: localStorage.getItem('sveve_pass') || '',
+  sender: localStorage.getItem('sveve_sender') || 'Glemmekassen'
 };
 let anthropicKey = localStorage.getItem('anthropic_key') || '';
 
 function saveConfig() {
-  twilioConfig.sid = document.getElementById('twilio-sid').value.trim();
-  twilioConfig.token = document.getElementById('twilio-token').value.trim();
-  twilioConfig.from = document.getElementById('twilio-from').value.trim();
-  localStorage.setItem('twilio_sid', twilioConfig.sid);
-  localStorage.setItem('twilio_token', twilioConfig.token);
-  localStorage.setItem('twilio_from', twilioConfig.from);
+  sveve.user = document.getElementById('sveve-user').value.trim();
+  sveve.pass = document.getElementById('sveve-pass').value.trim();
+  sveve.sender = document.getElementById('sveve-sender').value.trim() || 'Glemmekassen';
+  localStorage.setItem('sveve_user', sveve.user);
+  localStorage.setItem('sveve_pass', sveve.pass);
+  localStorage.setItem('sveve_sender', sveve.sender);
   showToast('✅ Konfig lagret', 'success');
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('twilio-sid').value = twilioConfig.sid;
-  document.getElementById('twilio-token').value = twilioConfig.token;
-  document.getElementById('twilio-from').value = twilioConfig.from;
+  document.getElementById('sveve-user').value = sveve.user;
+  document.getElementById('sveve-pass').value = sveve.pass;
+  document.getElementById('sveve-sender').value = sveve.sender;
 
   // Vis banner hvis iPhone men ikke Safari
   const ua = navigator.userAgent;
@@ -1297,8 +1297,8 @@ Glemmekassen er en ny gratis tjeneste som varsler eiere av gjenglemt utstyr. Fik
 
 // ── Send SMS ───────────────────────────────────────────
 async function sendSMS() {
-  if (!twilioConfig.sid || !twilioConfig.token || !twilioConfig.from) {
-    showToast('⚠️ Ingen Twilio-konfig – viser demo', 'error');
+  if (!sveve.user || !sveve.pass) {
+    showToast('⚠️ Ingen Sveve-konfig – viser demo', 'error');
     setTimeout(() => showSuccess(true), 800);
     return;
   }
@@ -1307,32 +1307,31 @@ async function sendSMS() {
   btn.disabled = true;
   btn.textContent = '⏳ Sender...';
 
-  let toNumber = state.phone.replace(/\D/g, '');
-  if (!toNumber.startsWith('+')) {
-    toNumber = toNumber.length === 8 ? `+47${toNumber}` : `+${toNumber}`;
-  }
+  const toNumber = state.phone.replace(/\D/g, '').replace(/^47/, '');
 
   try {
-    const body = new URLSearchParams({
-      To: toNumber,
-      From: twilioConfig.from,
-      Body: state.smsText
-    });
-
-    const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioConfig.sid}/Messages.json`, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/claude-proxy`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + btoa(`${twilioConfig.sid}:${twilioConfig.token}`),
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
       },
-      body
+      body: JSON.stringify({
+        action: 'sms',
+        user: sveve.user,
+        passwd: sveve.pass,
+        sender: sveve.sender,
+        to: toNumber,
+        msg: state.smsText
+      })
     });
-
     const data = await res.json();
-    if (data.sid) {
+
+    if (data.response?.msgOkCount > 0) {
       showSuccess(false);
     } else {
-      throw new Error(data.message || 'Ukjent feil');
+      const err = data.response?.fatalError || data.response?.errors?.[0]?.error || 'Ukjent feil';
+      throw new Error(err);
     }
   } catch(e) {
     showToast(`Feil: ${e.message}`, 'error');
@@ -1457,7 +1456,7 @@ function showToast(msg, type) {
 // Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/Glemmekassen/sw.js').catch(() => {});
   });
 }
 
@@ -1474,14 +1473,4 @@ function installApp() {
   if (!deferredPrompt) return;
   deferredPrompt.prompt();
   deferredPrompt.userChoice.then(() => {
-    deferredPrompt = null;
-    document.getElementById('install-banner').style.display = 'none';
-  });
-}
-
-window.addEventListener('appinstalled', () => {
-  document.getElementById('install-banner').style.display = 'none';
-});
-</script>
-</body>
-</html>
+    deferredPrompt
