@@ -1349,7 +1349,6 @@ async function sendSMS() {
       },
       body: JSON.stringify({
         action: 'sms',
-        sender: sveve.sender,
         to: toNumber,
         msg: state.smsText
       })
