@@ -88,10 +88,10 @@
   }
   .logo-text h1 {
     font-family: 'Syne', sans-serif;
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 800;
-    letter-spacing: -0.5px;
-    line-height: 1;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
   }
   .logo-text p {
     font-size: 12px;
@@ -537,7 +537,7 @@
   <header>
     <div class="logo-icon">📦</div>
     <div class="logo-text">
-      <h1>Hittegods</h1>
+      <h1>Hjelp noen å få tingen sin tilbake</h1>
       <p>Varsle eier på sekunder</p>
     </div>
   </header>
@@ -577,13 +577,13 @@
         <div style="position:absolute; bottom:-2px; left:-2px; width:20px; height:20px; border-bottom:3px solid white; border-left:3px solid white; border-radius:0 0 0 2px;"></div>
         <div style="position:absolute; bottom:-2px; right:-2px; width:20px; height:20px; border-bottom:3px solid white; border-right:3px solid white; border-radius:0 0 2px 0;"></div>
       </div>
-      <div style="margin-top:16px; font-size:13px; color:rgba(255,255,255,0.8); text-align:center; position:relative;">Hold merkelappen innenfor rammen</div>
+      <div style="margin-top:16px; font-size:13px; color:rgba(255,255,255,0.8); text-align:center; position:relative;">Hold merkelappen innenfor rammen 👆</div>
     </div>
 
     <!-- No camera fallback -->
     <div id="cam-placeholder" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center; flex-direction:column; gap:12px; background:var(--surface2);">
       <div style="font-size:48px;">📷</div>
-      <div style="font-size:14px; color:var(--muted); text-align:center; padding:0 24px;">Kamera ikke tilgjengelig – bruk galleri eller skriv inn manuelt</div>
+      <div style="font-size:14px; color:var(--muted); text-align:center; padding:0 24px;">Kamera ikke tilgjengelig – last opp bilde fra galleri</div>
     </div>
 
     <!-- Bottom controls -->
@@ -599,9 +599,9 @@
 
   <!-- STEG 2: Telefonnummer -->
   <div class="card" id="step-1">
-    <div class="card-label">Steg 2 av 5</div>
+    <div class="card-label">Nesten der 👀</div>
     <div class="card-title">Eierens telefonnummer</div>
-    <div class="card-desc">Sjekk at nummeret stemmer. Korriger om nødvendig.</div>
+    <div class="card-desc">Vi sender en SMS så eieren vet at noen bryr seg.</div>
 
     <div class="field" id="phone-field">
       <label>TELEFONNUMMER</label>
@@ -619,9 +619,9 @@
 
   <!-- STEG 3: Bilde av gjenstand -->
   <div class="card" id="step-2">
-    <div class="card-label">Steg 3 av 5</div>
+    <div class="card-label">Bra jobba! 📸</div>
     <div class="card-title">Ta bilde av gjenstanden</div>
-    <div class="card-desc">Kamera gjenkjenner automatisk hva slags gjenstand det er.</div>
+    <div class="card-desc">Et bilde hjelper eieren å kjenne igjen tingen sin.</div>
 
     <div class="camera-area" id="item-camera-area" onclick="startItemCamera()">
       <video id="item-video" autoplay playsinline muted></video>
@@ -676,9 +676,9 @@
 
   <!-- STEG 4: Posisjon -->
   <div class="card" id="step-3">
-    <div class="card-label">Steg 4 av 5</div>
+    <div class="card-label">Snart fremme 📍</div>
     <div class="card-title">Hvor ble gjenstanden funnet?</div>
-    <div class="card-desc">Hent posisjon automatisk, eller skriv inn stedet.</div>
+    <div class="card-desc">Så eieren vet akkurat hvor de kan hente tingen.</div>
 
     <div class="location-row" id="location-row" onclick="getLocation()">
       <span class="location-icon">📍</span>
@@ -708,9 +708,9 @@
 
   <!-- STEG 5: Oppsummering + send -->
   <div class="card" id="step-4">
-    <div class="card-label">Steg 5 av 5</div>
-    <div class="card-title">Klar til å sende</div>
-    <div class="card-desc">Sjekk at alt stemmer før SMS sendes.</div>
+    <div class="card-label">Siste steg! 🎯</div>
+    <div class="card-title">Du gjør en god ting nå 💚</div>
+    <div class="card-desc">En melding fra deg kan snu en dårlig dag.</div>
 
     <div class="summary-row">
       <span class="summary-icon">📱</span>
@@ -749,7 +749,7 @@
     <div class="nav-row">
       <button class="nav-back" onclick="goToStep(3)">←</button>
       <button class="send-btn" id="send-btn" onclick="sendSMS()" style="flex:1; margin:0">
-        📤 Send varsling
+        💚 Send hjelp på vei
       </button>
     </div>
   </div>
@@ -760,15 +760,15 @@
     <!-- Hero section -->
     <div style="text-align:center; padding: 40px 24px 28px;">
       <div style="width:80px; height:80px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 20px; font-size:36px; box-shadow: 0 0 0 16px rgba(0,229,160,0.1);">✓</div>
-      <div style="font-family:'Syne',sans-serif; font-size:30px; font-weight:800; color:var(--text); margin-bottom:6px;">Varsling sendt!</div>
-      <div class="success-desc" id="success-desc" style="font-size:14px; color:var(--muted);">SMS er sendt. Eieren vil snart få beskjed.</div>
+      <div style="font-family:'Syne',sans-serif; font-size:30px; font-weight:800; color:var(--text); margin-bottom:6px;">Du gjorde noen glad i dag!</div>
+      <div class="success-desc" id="success-desc" style="font-size:14px; color:var(--muted);">Eieren får nå SMS om at noen har funnet tingen deres. 🙌</div>
     </div>
 
     <!-- Counter card -->
     <div id="counter-box" style="margin: 0 16px 16px; background: linear-gradient(135deg, #0d2040 0%, #0a1628 100%); border: 1px solid rgba(0,229,160,0.25); border-radius: 24px; padding: 28px 24px; text-align:center; position:relative; overflow:hidden;">
       <div style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:rgba(0,229,160,0.05); border-radius:50%;"></div>
       <div style="position:absolute; bottom:-30px; left:-30px; width:160px; height:160px; background:rgba(0,229,160,0.03); border-radius:50%;"></div>
-      <div style="font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px;">Gjenstander varslet</div>
+      <div style="font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px;">Eiere varslet av Glemmekassen</div>
       <div id="counter-number" style="font-family:'Syne',sans-serif; font-size:88px; font-weight:800; color:var(--accent); line-height:0.9; margin-bottom:14px; text-shadow: 0 0 40px rgba(0,229,160,0.3);">1</div>
       <div style="width:40px; height:2px; background:rgba(0,229,160,0.3); margin: 0 auto 14px; border-radius:2px;"></div>
       <div style="font-size:13px; color:rgba(255,255,255,0.45); line-height:1.5;">Glemmekassen er under utprøving<br>— takk for at du hjelper! 🙌</div>
@@ -776,8 +776,8 @@
 
     <!-- Feedback card -->
     <div style="margin: 0 16px 16px; background: var(--surface2); border-radius: 20px; padding: 20px;">
-      <div style="font-size:12px; font-weight:600; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px;">Gi tilbakemelding</div>
-      <div style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Fikk eieren gjenstanden tilbake? Det hjelper oss å bli bedre!</div>
+      <div style="font-size:12px; font-weight:600; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px;">Kom tingen hjem?</div>
+      <div style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Vi elsker å høre når det går bra! Gi oss gjerne en tilbakemelding.</div>
       <a href="sms:95276157" style="display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:14px; padding:14px 16px; margin-bottom:8px; text-decoration:none; border: 1px solid rgba(255,255,255,0.05);">
         <span style="width:36px; height:36px; background:rgba(0,229,160,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">📱</span>
         <div>
@@ -796,7 +796,7 @@
 
     <!-- Next action -->
     <div style="padding: 0 16px 40px;">
-      <button class="new-report-btn" onclick="resetApp()" style="width:100%; padding:18px; font-size:16px; font-weight:700; border-radius:16px;">📦 Skann neste gjenstand</button>
+      <button class="new-report-btn" onclick="resetApp()" style="width:100%; padding:18px; font-size:16px; font-weight:700; border-radius:16px;">📦 Hjelp neste eier</button>
     </div>
 
   </div>
@@ -1348,7 +1348,7 @@ async function sendSMS() {
   } catch(e) {
     showToast(`Feil: ${e.message}`, 'error');
     btn.disabled = false;
-    btn.textContent = '📤 Send varsling';
+    btn.textContent = '💚 Send hjelp på vei';
   }
 }
 
@@ -1430,7 +1430,7 @@ function resetApp() {
   document.getElementById('loc-value').textContent = 'Trykk for å hente posisjon';
   document.getElementById('sum-photo-row').style.display = 'none';
   document.getElementById('send-btn').disabled = false;
-  document.getElementById('send-btn').textContent = '📤 Send varsling';
+  document.getElementById('send-btn').textContent = '💚 Send hjelp på vei';
 
   currentStep = 0;
   document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
