@@ -846,10 +846,18 @@ window.addEventListener('DOMContentLoaded', () => {
 
 async function autoStartCamera() {
   try {
-    const constraints = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-      ? { video: { facingMode: { exact: 'environment' } } }
-      : { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+    } catch(e1) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      } catch(e2) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+    }
     state.stream = stream;
     state.cameraOpen = true;
     const video = document.getElementById('video');
@@ -925,10 +933,18 @@ async function startCamera() {
     return;
   }
   try {
-    const constraints = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-      ? { video: { facingMode: { exact: 'environment' } } }
-      : { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+    } catch(e1) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      } catch(e2) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+    }
     state.stream = stream;
     state.cameraOpen = true;
     const video = document.getElementById('video');
@@ -1103,10 +1119,18 @@ let itemStream = null;
 async function autoStartItemCamera() {
   if (itemStream || state.itemPhotoDataUrl) return;
   try {
-    const constraints = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-      ? { video: { facingMode: { exact: 'environment' } } }
-      : { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+    } catch(e1) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      } catch(e2) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+    }
     itemStream = stream;
     const video = document.getElementById('item-video');
     video.srcObject = stream;
@@ -1121,10 +1145,18 @@ async function autoStartItemCamera() {
 async function startItemCamera() {
   if (itemStream) { captureItemPhoto(); return; }
   try {
-    const constraints = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-      ? { video: { facingMode: { exact: 'environment' } } }
-      : { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+    } catch(e1) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      } catch(e2) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+    }
     itemStream = stream;
     const video = document.getElementById('item-video');
     video.srcObject = stream;
