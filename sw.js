@@ -1,5 +1,5 @@
-const CACHE = 'glemmekassen-v1';
-const ASSETS = ['/'];
+const CACHE = 'glemmekassen-v3';
+const ASSETS = ['/Glemmekassen/', '/Glemmekassen/hittegods.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -21,11 +21,18 @@ self.addEventListener('fetch', e => {
   // Ikke cache API-kall
   if (e.request.url.includes('supabase') || 
       e.request.url.includes('anthropic') ||
-      e.request.url.includes('twilio') ||
+      e.request.url.includes('sveve') ||
       e.request.url.includes('countapi')) {
     return;
   }
+  // Alltid hent fersk versjon fra nett, fall tilbake på cache
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request, { cache: 'no-cache' })
+      .then(res => {
+        const copy = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, copy));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
