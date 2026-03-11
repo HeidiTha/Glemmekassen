@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glemmekassen – Vi fant noe som kan være ditt</title>
+<meta name="theme-color" content="#0A1628">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark: #0A1628;
+    --green: #00C896;
+    --green-dim: #00C89622;
+    --white: #FFFFFF;
+    --muted: #7A8AAA;
+    --card: #111E35;
+    --border: #1E2E48;
+  }
+
+  html, body {
+    min-height: 100vh;
+    background: var(--dark);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--white);
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% -10%, #00C89614 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, #00A87814 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  /* ── Header ── */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 28px 0 32px;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: var(--green);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    letter-spacing: -0.3px;
+    color: var(--white);
+  }
+
+  /* ── Hero message ── */
+  .hero {
+    margin-bottom: 28px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 10px;
+  }
+
+  .hero-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+    margin-bottom: 12px;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--green);
+  }
+
+  .hero-sub {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ── Image card ── */
+  .image-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    animation: fadeUp 0.5s 0.1s ease both;
+  }
+
+  .item-image {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    display: block;
+    background: var(--border);
+  }
+
+  .item-image.no-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    aspect-ratio: 4/3;
+  }
+
+  .item-meta {
+    padding: 16px 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  .meta-icon {
+    width: 30px;
+    height: 30px;
+    background: var(--green-dim);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .meta-label {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  .meta-value {
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* ── CTA ── */
+  .cta-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px 20px;
+    margin-bottom: 16px;
+    animation: fadeUp 0.5s 0.2s ease both;
+  }
+
+  .cta-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .cta-desc {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    background: var(--green);
+    color: var(--dark);
+    border: none;
+    border-radius: 14px;
+    padding: 16px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-primary:active {
+    opacity: 0.85;
+    transform: scale(0.98);
+  }
+
+  /* iOS install steps */
+  .install-steps {
+    display: none;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .install-steps.visible { display: block; }
+
+  .install-steps-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  .step-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .step-num {
+    width: 24px;
+    height: 24px;
+    background: var(--green);
+    color: var(--dark);
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-text {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .step-text strong { color: var(--white); }
+
+  /* ── Contact ── */
+  .contact-row {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    animation: fadeUp 0.5s 0.3s ease both;
+    line-height: 1.7;
+  }
+
+  .contact-row a {
+    color: var(--green);
+    text-decoration: none;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top-bar">
+    <div class="logo-mark">
+      <svg width="22" height="22" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Box body -->
+        <rect x="4" y="16" width="28" height="16" rx="2" fill="#0A1628"/>
+        <!-- Box front panel -->
+        <rect x="4" y="16" width="28" height="16" rx="2" fill="#0A1628" stroke="#00C896" stroke-width="1.5"/>
+        <!-- Open top flaps -->
+        <path d="M4 16 L8 9 L28 9 L32 16" stroke="#00C896" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <!-- Clothes sticking out -->
+        <path d="M12 9 Q13 5 15 7 Q17 4 18 8" stroke="#ff6b6b" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M20 9 Q21 5 23 6 Q24 4 25 8" stroke="#4ecdc4" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M16 9 Q17 6 18 5 Q19 6 20 9" stroke="#ffe66d" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="logo-text">Glemmekassen</div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-eyebrow">📬 Du har fått et varsel</div>
+    <h1 class="hero-title">Vi fant noe som<br><em>kanskje er ditt</em></h1>
+    <p class="hero-sub">En finner sendte oss dette bildet. Kjenner du igjen gjenstanden?</p>
+  </div>
+
+  <div class="image-card">
+    <div id="item-img-wrap">
+      <div class="item-image no-image" id="no-img">🎒</div>
+    </div>
+    <div class="item-meta">
+      <div class="meta-row">
+        <div class="meta-icon">📦</div>
+        <div>
+          <div class="meta-label">Gjenstand</div>
+          <div class="meta-value" id="meta-gjenstand">–</div>
+        </div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-icon">📍</div>
+        <div>
+          <div class="meta-label">Sted</div>
+          <div class="meta-value" id="meta-sted">–</div>
+        </div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-icon">🕐</div>
+        <div>
+          <div class="meta-label">Tidspunkt</div>
+          <div class="meta-value" id="meta-tid">–</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-card">
+    <div class="cta-title">Er dette din ting? 👋</div>
+    <p class="cta-desc">Dra og hent gjenstanden så fort som mulig – jo raskere, desto bedre sjanse for at den er der ennå! Og neste gang du finner noe som noen andre har glemt, kan du varsle eieren på sekunder med Glemmekassen-appen.</p>
+    <a href="https://heiditha.github.io/Glemmekassen/" id="install-btn" class="btn-primary">
+      📲 Legg til Glemmekassen på mobilen
+    </a>
+
+    <div class="install-steps" id="ios-steps">
+      <div class="install-steps-title">Slik gjør du det på iPhone</div>
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-text">Trykk på <strong>Del-ikonet</strong> nederst i Safari (firkant med pil opp)</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-text">Velg <strong>«Legg til på Hjem-skjerm»</strong></div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-text">Trykk <strong>«Legg til»</strong> – ferdig! 🎉</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact-row">
+    Spørsmål? Ta kontakt på<br>
+    <a href="sms:95276157">📱 95276157</a> eller
+    <a href="mailto:heidi.thaulow@gmail.com">heidi.thaulow@gmail.com</a>
+  </div>
+
+</div>
+
+<script>
+  // Parse URL params
+  const p = new URLSearchParams(window.location.search);
+  const bildeUrl  = p.get('bilde');
+  const gjenstand = p.get('gjenstand');
+  const sted      = p.get('sted');
+  const tid       = p.get('tid');
+  const lat       = p.get('lat');
+  const lng       = p.get('lng');
+
+  // Show image
+  if (bildeUrl) {
+    const wrap = document.getElementById('item-img-wrap');
+    const img = document.createElement('img');
+    img.src = decodeURIComponent(bildeUrl);
+    img.className = 'item-image';
+    img.alt = 'Bilde av gjenstanden';
+    wrap.innerHTML = '';
+    wrap.appendChild(img);
+  } else {
+    // Show emoji based on type
+    const emojis = { jakke:'🧥', sko:'👟', bag:'🎒', sekk:'🎒', lue:'🧢', hanske:'🧤', sportsutstyr:'⚽', vannflaske:'💧', annet:'📦' };
+    const key = gjenstand ? Object.keys(emojis).find(k => gjenstand.toLowerCase().includes(k)) : null;
+    document.getElementById('no-img').innerHTML = emojis[key] || '🎒';
+  }
+
+  // Fill metadata
+  if (gjenstand) document.getElementById('meta-gjenstand').textContent = decodeURIComponent(gjenstand);
+  if (sted)      document.getElementById('meta-sted').textContent = decodeURIComponent(sted);
+  if (tid) {
+    const d = new Date(decodeURIComponent(tid));
+    document.getElementById('meta-tid').textContent = d.toLocaleString('no-NO', { dateStyle:'medium', timeStyle:'short' });
+  } else {
+    document.getElementById('meta-tid').textContent = 'Nylig funnet';
+  }
+
+  // Update map link if GPS available
+  if (lat && lng) {
+    const mapUrl = `https://maps.google.com/?q=${lat},${lng}`;
+    document.getElementById('meta-sted').innerHTML =
+      `<a href="${mapUrl}" style="color:var(--green);text-decoration:none">${decodeURIComponent(sted || 'Vis på kart')} 🗺️</a>`;
+  }
+
+  // Install button logic
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+  if (isStandalone) {
+    document.getElementById('install-btn').textContent = '✅ Appen er allerede installert!';
+    document.getElementById('install-btn').style.opacity = '0.6';
+    document.getElementById('install-btn').style.pointerEvents = 'none';
+  } else if (isIOS) {
+    document.getElementById('install-btn').textContent = '📲 Se hvordan du installerer';
+    document.getElementById('install-btn').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('ios-steps').classList.toggle('visible');
+    });
+  } else if (isAndroid) {
+    // Android: open app and trigger install
+    document.getElementById('install-btn').href = 'https://heiditha.github.io/Glemmekassen/';
+  }
+</script>
+</body>
+</html>
