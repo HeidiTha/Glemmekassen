@@ -535,7 +535,13 @@
 <body>
 <div class="app">
   <header>
-    <div class="logo-icon">📦</div>
+    <div class="logo-icon"><svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="16" width="28" height="16" rx="2" fill="#172240" stroke="#00C896" stroke-width="1.5"/>
+        <path d="M4 16 L8 9 L28 9 L32 16" stroke="#00C896" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <path d="M12 9 Q13 5 15 7 Q17 4 18 8" stroke="#ff6b6b" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M20 9 Q21 5 23 6 Q24 4 25 8" stroke="#4ecdc4" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M16 9 Q17 6 18 5 Q19 6 20 9" stroke="#ffe66d" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg></div>
     <div class="logo-text">
       <h1>Hjelp noen å få tingen sin tilbake</h1>
       <p>Varsle eier på sekunder</p>
@@ -814,7 +820,7 @@
 
     <!-- Next action -->
     <div style="padding: 0 16px 40px;">
-      <button class="new-report-btn" onclick="resetApp()" style="width:100%; padding:18px; font-size:16px; font-weight:700; border-radius:16px;">📦 Hjelp neste eier</button>
+      <button class="new-report-btn" onclick="resetApp()" style="width:100%; padding:18px; font-size:16px; font-weight:700; border-radius:16px;">🎽 Hjelp neste eier</button>
     </div>
 
   </div>
@@ -1317,31 +1323,77 @@ function goToSummary() {
     document.getElementById('sum-photo-row').style.display = 'flex';
   }
 
-  // Build SMS
+  // Build SMS (bilde-URL legges til etter opplasting i sendSMS)
   const mapLink = state.lat ? `https://maps.google.com/?q=${state.lat},${state.lng}` : '';
   const itemPart = itemLabel ? ` (${itemLabel.replace(/^.\s/, '')})` : '';
   const locationPart = state.placeName || state.locationText;
-  const smsTxt = `Hei! Vi fant en gjenstand${itemPart} på ${locationPart} som kan tilhøre deg. 📍${mapLink ? ' ' + mapLink : ' ' + locationPart}
+  state.mapLink = mapLink;
+  state.locationPart = locationPart;
+  state.itemPart = itemPart;
 
-Glemmekassen er en ny gratis tjeneste som varsler eiere av gjenglemt utstyr. Fikk du gjenstanden din tilbake? Send gjerne tilbakemelding – det hjelper oss å bli bedre! 📲 95276157 eller heidi.thaulow@gmail.com
-
-– Glemmekassen`;
-
+  const smsTxt = buildSmsText('[bilde lastes opp...]');
   document.getElementById('sms-preview-text').textContent = smsTxt;
   state.smsText = smsTxt;
 
   goToStep(4);
 }
 
+function buildSmsText(bildeUrl) {
+  let bildePageUrl = '';
+  if (bildeUrl && bildeUrl !== '[bilde lastes opp...]') {
+    const bp = new URLSearchParams();
+    bp.set('bilde', bildeUrl);
+    if (state.itemType) bp.set('gjenstand', state.itemType);
+    if (state.locationPart) bp.set('sted', state.locationPart);
+    if (state.lat) bp.set('lat', state.lat);
+    if (state.lng) bp.set('lng', state.lng);
+    bp.set('tid', new Date().toISOString());
+    bildePageUrl = `https://heiditha.github.io/Glemmekassen/bilde.html?${bp.toString()}`;
+  }
+  const bildeLinje = bildePageUrl ? `\n📸 Se bilde: ${bildePageUrl}` : '';
+  return `Hei! Vi fant en gjenstand${state.itemPart} på ${state.locationPart} som kan tilhøre deg. 📍${state.mapLink ? ' ' + state.mapLink : ' ' + state.locationPart}${bildeLinje}
+
+Glemmekassen er en ny gratis tjeneste som varsler eiere av gjenglemt utstyr. Fikk du gjenstanden din tilbake? Send gjerne tilbakemelding – det hjelper oss å bli bedre! 📲 95276157 eller heidi.thaulow@gmail.com
+
+– Glemmekassen`;
+}
+
 // ── Send SMS ───────────────────────────────────────────
+async function uploadBilde(dataUrl) {
+  if (!dataUrl) return null;
+  try {
+    const blob = await (await fetch(dataUrl)).blob();
+    const filename = `bilde_${Date.now()}.jpg`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/bilder/${filename}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'image/jpeg',
+        'x-upsert': 'true'
+      },
+      body: blob
+    });
+    if (!res.ok) return null;
+    return `${SUPABASE_URL}/storage/v1/object/public/bilder/${filename}`;
+  } catch(e) {
+    return null;
+  }
+}
+
 async function sendSMS() {
   const btn = document.getElementById('send-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Sender...';
+  btn.textContent = '⏳ Laster opp bilde...';
 
   const toNumber = state.phone.replace(/\D/g, '').replace(/^47/, '');
 
   try {
+    // Last opp bilde og bygg SMS-tekst med lenke
+    const bildeUrl = await uploadBilde(state.itemPhotoDataUrl);
+    const finalMsg = buildSmsText(bildeUrl || '');
+
+    btn.textContent = '⏳ Sender SMS...';
+
     const res = await fetch(`${SUPABASE_URL}/functions/v1/claude-proxy`, {
       method: 'POST',
       headers: {
@@ -1351,15 +1403,21 @@ async function sendSMS() {
       body: JSON.stringify({
         action: 'sms',
         to: toNumber,
-        msg: state.smsText
+        msg: finalMsg,
+        bilde_url: bildeUrl,
+        gjenstand: state.itemType,
+        stedsnavn: state.locationPart,
+        lat: state.lat,
+        lng: state.lng,
+        telefon: toNumber
       })
     });
     const data = await res.json();
 
-    if (data.response?.msgOkCount > 0) {
+    if (data.ok || data.sid) {
       showSuccess(false);
     } else {
-      const err = data.response?.fatalError || data.response?.errors?.[0]?.error || 'Ukjent feil';
+      const err = data.error || 'Ukjent feil';
       throw new Error(err);
     }
   } catch(e) {
@@ -1473,7 +1531,13 @@ function showToast(msg, type) {
 
 <!-- PWA Install Banner -->
 <div id="install-banner" style="display:none; position:fixed; bottom:80px; left:16px; right:16px; background:#111d35; border:1px solid rgba(0,229,160,0.3); border-radius:16px; padding:16px 20px; z-index:9999; display:none; align-items:center; gap:14px; box-shadow:0 8px 32px rgba(0,0,0,0.4);">
-  <span style="font-size:32px">📦</span>
+  <span style="font-size:32px"><svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="16" width="28" height="16" rx="2" fill="#172240" stroke="#00C896" stroke-width="1.5"/>
+        <path d="M4 16 L8 9 L28 9 L32 16" stroke="#00C896" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <path d="M12 9 Q13 5 15 7 Q17 4 18 8" stroke="#ff6b6b" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M20 9 Q21 5 23 6 Q24 4 25 8" stroke="#4ecdc4" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M16 9 Q17 6 18 5 Q19 6 20 9" stroke="#ffe66d" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg></span>
   <div style="flex:1">
     <div style="font-weight:600; color:#f0f4ff; font-size:15px;">Installer Glemmekassen</div>
     <div style="font-size:12px; color:#7a8aaa; margin-top:2px;">Legg til på hjemskjermen for raskere tilgang</div>
