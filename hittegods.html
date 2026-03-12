@@ -630,7 +630,7 @@
     <div class="card-desc">Et bilde hjelper eieren å kjenne igjen tingen sin.</div>
 
     <div class="camera-area" id="item-camera-area" onclick="startItemCamera()">
-      <video id="item-video" autoplay playsinline muted></video>
+      <video id="item-video" autoplay playsinline muted style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; inset:0;"></video>
       <canvas id="item-canvas" style="display:none"></canvas>
       <div class="camera-placeholder" id="item-cam-placeholder">
         <div class="cam-icon">🧥</div>
@@ -701,8 +701,8 @@
     </div>
 
     <div class="field">
-      <label>STED (skole, hall, adresse)</label>
-      <input type="text" id="place-input" placeholder="f.eks. Ris ungdomsskole" autocomplete="off">
+      <label>DETALJERT STED (etasje, rom, inngang...)</label>
+      <input type="text" id="place-input" placeholder="f.eks. 1.klasse-gangen, tennishallen, ved inngangen..." autocomplete="off">
     </div>
 
     <div class="nav-row">
@@ -945,8 +945,8 @@ function goToStep(n) {
   // Stop merkelapp-kamera når vi forlater steg 0
   if (n !== 0 && state.stream) stopCamera();
 
-  // Auto-start gjenstandskamera på steg 2
-  if (n === 2) autoStartItemCamera();
+  // Auto-start gjenstandskamera på steg 2 – liten forsinkelse så steg 1-kamera rekker å stoppe
+  if (n === 2) setTimeout(() => autoStartItemCamera(), 400);
 }
 
 // ── Camera ─────────────────────────────────────────────
@@ -1331,26 +1331,14 @@ function goToSummary() {
   state.locationPart = locationPart;
   state.itemPart = itemPart;
 
-  const smsTxt = buildSmsText('[bilde lastes opp...]');
+  const smsTxt = buildSmsText(state.itemPhotoDataUrl ? 'tinyurl.com/...' : '');
   document.getElementById('sms-preview-text').textContent = smsTxt;
-  state.smsText = smsTxt;
 
   goToStep(4);
 }
 
 function buildSmsText(bildeUrl) {
-  let bildePageUrl = '';
-  if (bildeUrl && bildeUrl !== '[bilde lastes opp...]') {
-    const bp = new URLSearchParams();
-    bp.set('bilde', bildeUrl);
-    if (state.itemType) bp.set('gjenstand', state.itemType);
-    if (state.locationPart) bp.set('sted', state.locationPart);
-    if (state.lat) bp.set('lat', state.lat);
-    if (state.lng) bp.set('lng', state.lng);
-    bp.set('tid', new Date().toISOString());
-    bildePageUrl = `https://heiditha.github.io/Glemmekassen/bilde.html?${bp.toString()}`;
-  }
-  const bildeLinje = bildePageUrl ? `\n📸 Se bilde: ${bildePageUrl}` : '';
+  const bildeLinje = bildeUrl ? `\n📸 Se bilde: ${bildeUrl}` : '';
   return `Hei! Vi fant en gjenstand${state.itemPart} på ${state.locationPart} som kan tilhøre deg. 📍${state.mapLink ? ' ' + state.mapLink : ' ' + state.locationPart}${bildeLinje}
 
 Glemmekassen er en ny gratis tjeneste som varsler eiere av gjenglemt utstyr. Fikk du gjenstanden din tilbake? Send gjerne tilbakemelding – det hjelper oss å bli bedre! 📲 95276157 eller heidi.thaulow@gmail.com
@@ -1359,6 +1347,8 @@ Glemmekassen er en ny gratis tjeneste som varsler eiere av gjenglemt utstyr. Fik
 }
 
 // ── Send SMS ───────────────────────────────────────────
+// URL-forkorting skjer server-side i Edge Function (unngår CORS)
+
 async function uploadBilde(dataUrl) {
   if (!dataUrl) return null;
   try {
@@ -1374,7 +1364,17 @@ async function uploadBilde(dataUrl) {
       body: blob
     });
     if (!res.ok) return null;
-    return `${SUPABASE_URL}/storage/v1/object/public/bilder/${filename}`;
+    const fullUrl = `${SUPABASE_URL}/storage/v1/object/public/bilder/${filename}`;
+    // Build bilde-page URL then shorten it
+    const bp = new URLSearchParams();
+    bp.set('bilde', fullUrl);
+    if (state.itemType) bp.set('gjenstand', state.itemType);
+    if (state.locationPart) bp.set('sted', state.locationPart);
+    if (state.lat) bp.set('lat', state.lat);
+    if (state.lng) bp.set('lng', state.lng);
+    bp.set('tid', new Date().toISOString());
+    const bildePageUrl = `https://heiditha.github.io/Glemmekassen/bilde.html?${bp.toString()}`;
+    return { fullUrl, bildePageUrl };
   } catch(e) {
     return null;
   }
@@ -1389,8 +1389,11 @@ async function sendSMS() {
 
   try {
     // Last opp bilde og bygg SMS-tekst med lenke
-    const bildeUrl = await uploadBilde(state.itemPhotoDataUrl);
-    const finalMsg = buildSmsText(bildeUrl || '');
+    const bildeResult = await uploadBilde(state.itemPhotoDataUrl);
+    const bildePageUrl = bildeResult?.bildePageUrl || '';
+    const fullUrl      = bildeResult?.fullUrl || null;
+    // Send bildePageUrl separat – Edge Function forkorter og setter inn i SMS
+    const msgUtenBilde = buildSmsText('__BILDE_URL__');
 
     btn.textContent = '⏳ Sender SMS...';
 
@@ -1403,8 +1406,9 @@ async function sendSMS() {
       body: JSON.stringify({
         action: 'sms',
         to: toNumber,
-        msg: finalMsg,
-        bilde_url: bildeUrl,
+        msg: msgUtenBilde,
+        bilde_page_url: bildePageUrl,
+        bilde_url: fullUrl,
         gjenstand: state.itemType,
         stedsnavn: state.locationPart,
         lat: state.lat,
@@ -1527,6 +1531,20 @@ function showToast(msg, type) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ── Homescreen card ────────────────────────────────────
+function showHomescreenCard() {
+  const card = document.getElementById('homescreen-card');
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  const isAndroidInstalled = window.matchMedia('(display-mode: standalone)').matches;
+  if (!isStandalone && !isAndroidInstalled) {
+    card.style.display = 'block';
+    if (isIOS) {
+      document.getElementById('homescreen-btn').textContent = 'Se hvordan du gjør det';
+    }
+  }
+}
 </script>
 
 <!-- PWA Install Banner -->
@@ -1580,16 +1598,3 @@ function triggerInstall() {
   }
 }
 
-function showHomescreenCard() {
-  const card = document.getElementById('homescreen-card');
-  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone;
-  const isAndroidInstalled = window.matchMedia('(display-mode: standalone)').matches;
-  // Only show if not already installed
-  if (!isStandalone && !isAndroidInstalled) {
-    card.style.display = 'block';
-    if (isIOS) {
-      document.getElementById('homescreen-btn').textContent = 'Se hvordan du gjør det';
-    }
-  }
-}
