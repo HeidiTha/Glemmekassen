@@ -75,23 +75,23 @@
     gap: 14px;
   }
   .logo-icon {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 14px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: 18px;
     flex-shrink: 0;
     box-shadow: 0 4px 20px rgba(0,229,160,0.3);
   }
   .logo-text h1 {
     font-family: 'Syne', sans-serif;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 800;
     letter-spacing: -0.3px;
-    line-height: 1.2;
+    line-height: 1.35;
   }
   .logo-text p {
     font-size: 12px;
@@ -543,8 +543,8 @@
         <path d="M16 9 Q17 6 18 5 Q19 6 20 9" stroke="#ffe66d" stroke-width="2" fill="none" stroke-linecap="round"/>
       </svg></div>
     <div class="logo-text">
-      <h1>Hjelp noen å få tingen sin tilbake</h1>
-      <p>Varsle eier på sekunder</p>
+      <h1>Finn navnelapp med telefonnummer – SMS går automatisk til eieren</h1>
+      <p>Scan nummeret – eieren får SMS</p>
     </div>
   </header>
 
@@ -583,7 +583,8 @@
         <div style="position:absolute; bottom:-2px; left:-2px; width:20px; height:20px; border-bottom:3px solid white; border-left:3px solid white; border-radius:0 0 0 2px;"></div>
         <div style="position:absolute; bottom:-2px; right:-2px; width:20px; height:20px; border-bottom:3px solid white; border-right:3px solid white; border-radius:0 0 2px 0;"></div>
       </div>
-      <div style="margin-top:16px; font-size:13px; color:rgba(255,255,255,0.8); text-align:center; position:relative;">Hold merkelappen innenfor rammen 👆</div>
+      <div style="margin-top:16px; font-size:13px; color:rgba(255,255,255,0.8); text-align:center; position:relative;">Hold telefonnummeret innenfor rammen</div>
+      <div style="margin-top:6px; font-size:11px; color:rgba(255,255,255,0.5); text-align:center; position:relative;">Sjekk nakken, innsiden, bunnen eller siden av gjenstanden</div>
     </div>
 
     <!-- No camera fallback -->
@@ -598,7 +599,7 @@
       <div style="display:flex; gap:10px; width:100%;">
         <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFileCapture(event)">
         <button onclick="document.getElementById('file-input').click()" style="flex:1; padding:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2); border-radius:10px; color:white; font-size:12px; cursor:pointer; backdrop-filter:blur(10px);">🖼️ Galleri</button>
-        <button onclick="goToStep(1)" style="flex:1; padding:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2); border-radius:10px; color:rgba(255,255,255,0.7); font-size:12px; cursor:pointer; backdrop-filter:blur(10px);">✍️ Manuelt</button>
+        <button onclick="goToStep(1)" style="flex:1; padding:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2); border-radius:10px; color:rgba(255,255,255,0.7); font-size:12px; cursor:pointer; backdrop-filter:blur(10px);">✍️ Skriv inn nummer</button>
       </div>
     </div>
   </div>
@@ -756,7 +757,7 @@
     <div class="nav-row">
       <button class="nav-back" onclick="goToStep(3)">←</button>
       <button class="send-btn" id="send-btn" onclick="sendSMS()" style="flex:1; margin:0">
-        💚 Send hjelp på vei
+        💚 Varsle eieren nå
       </button>
     </div>
   </div>
@@ -1341,7 +1342,9 @@ function buildSmsText(bildeUrl) {
   const bildeLinje = bildeUrl ? `\n📸 Se bilde: ${bildeUrl}` : '';
   return `Hei! Vi fant en gjenstand${state.itemPart} på ${state.locationPart} som kan tilhøre deg. 📍${state.mapLink ? ' ' + state.mapLink : ' ' + state.locationPart}${bildeLinje}
 
-Glemmekassen er en ny gratis tjeneste som varsler eiere av gjenglemt utstyr. Fikk du gjenstanden din tilbake? Send gjerne tilbakemelding – det hjelper oss å bli bedre! 📲 95276157 eller heidi.thaulow@gmail.com
+Hent den så fort du kan – jo raskere, desto bedre sjanse for at den fortsatt er der! 🏃
+
+Glemmekassen varsler eiere av gjenglemt utstyr. Fikk du tingen tilbake? Send gjerne tilbakemelding! 📲 95276157 eller heidi.thaulow@gmail.com
 
 – Glemmekassen`;
 }
@@ -1427,7 +1430,7 @@ async function sendSMS() {
   } catch(e) {
     showToast(`Feil: ${e.message}`, 'error');
     btn.disabled = false;
-    btn.textContent = '💚 Send hjelp på vei';
+    btn.textContent = '💚 Varsle eieren nå';
   }
 }
 
@@ -1510,7 +1513,7 @@ function resetApp() {
   document.getElementById('loc-value').textContent = 'Trykk for å hente posisjon';
   document.getElementById('sum-photo-row').style.display = 'none';
   document.getElementById('send-btn').disabled = false;
-  document.getElementById('send-btn').textContent = '💚 Send hjelp på vei';
+  document.getElementById('send-btn').textContent = '💚 Varsle eieren nå';
 
   currentStep = 0;
   document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
@@ -1538,11 +1541,13 @@ function showHomescreenCard() {
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
   const isStandalone = window.navigator.standalone;
   const isAndroidInstalled = window.matchMedia('(display-mode: standalone)').matches;
-  if (!isStandalone && !isAndroidInstalled) {
-    card.style.display = 'block';
-    if (isIOS) {
-      document.getElementById('homescreen-btn').textContent = 'Se hvordan du gjør det';
-    }
+  if (isStandalone || isAndroidInstalled) return; // allerede installert
+  card.style.display = 'block';
+  if (isIOS) {
+    document.getElementById('homescreen-btn').textContent = 'Se hvordan du gjør det';
+  } else if (!deferredPrompt) {
+    // Android men ingen install-prompt – vis manuell veiledning
+    document.getElementById('homescreen-btn').textContent = 'Legg til på hjemskjermen';
   }
 }
 </script>
@@ -1588,11 +1593,19 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 function triggerInstall() {
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
   if (deferredPrompt) {
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+  } else if (isIOS) {
+    document.getElementById('iphone-install-steps').style.display = 'block';
+    document.getElementById('homescreen-btn').style.display = 'none';
   } else {
-    // iPhone: show manual steps
+    // Android uten prompt – vis manuell veiledning
+    document.getElementById('iphone-install-steps').innerHTML =
+      '1. Trykk på <strong style="color:var(--text)">meny-knappen</strong> (⋮) øverst til høyre i Chrome<br>' +
+      '2. Trykk <strong style="color:var(--text)">"Legg til på startskjermen"</strong><br>' +
+      '3. Trykk <strong style="color:var(--text)">"Legg til"</strong>';
     document.getElementById('iphone-install-steps').style.display = 'block';
     document.getElementById('homescreen-btn').style.display = 'none';
   }
