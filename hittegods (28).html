@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a1628">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Glemmekassen</title>
+<link rel="manifest" href="/Glemmekassen/manifest.json">
+<meta name="apple-mobile-web-app-title" content="Glemmekassen">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a1628;
+    --surface: #111d35;
+    --surface2: #172240;
+    --accent: #00e5a0;
+    --accent2: #0098ff;
+    --text: #f0f4ff;
+    --muted: #7a8aaa;
+    --danger: #ff4d6d;
+    --radius: 20px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -30%;
+    left: -20%;
+    width: 70vw;
+    height: 70vw;
+    background: radial-gradient(circle, rgba(0,229,160,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    right: -20%;
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, rgba(0,152,255,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 0 40px;
+  }
+
+  /* Header */
+  header {
+    padding: 52px 24px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 20px rgba(0,229,160,0.3);
+  }
+  .logo-text h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+  }
+  .logo-text p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* Steps indicator */
+  .steps {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 24px 28px;
+  }
+  .step-dot {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface2);
+    transition: all 0.3s ease;
+    flex: 1;
+  }
+  .step-dot.active { background: var(--accent); }
+  .step-dot.done { background: rgba(0,229,160,0.4); }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: 0 16px 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+    display: none;
+    animation: slideUp 0.35s ease;
+  }
+  .card.active { display: block; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .card-desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  /* Camera area */
+  .camera-area {
+    position: relative;
+    background: var(--surface2);
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px dashed rgba(0,229,160,0.3);
+    transition: border-color 0.2s;
+  }
+  .camera-area:active { border-color: var(--accent); }
+  .camera-area video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .camera-area canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .camera-placeholder {
+    text-align: center;
+    padding: 20px;
+  }
+  .camera-placeholder .cam-icon { font-size: 40px; margin-bottom: 10px; }
+  .camera-placeholder p { font-size: 14px; color: var(--muted); }
+
+  .scan-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.5);
+    display: none;
+  }
+  .scan-overlay.visible { display: flex; }
+  .scan-line {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scan 1.5s ease-in-out infinite;
+    top: 20%;
+  }
+  @keyframes scan {
+    0% { top: 20%; }
+    50% { top: 80%; }
+    100% { top: 20%; }
+  }
+  .scan-frame {
+    width: 70%;
+    aspect-ratio: 3/1;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    box-shadow: 0 0 0 2000px rgba(0,0,0,0.4);
+  }
+
+  /* Capture button */
+  .capture-btn {
+    width: 100%;
+    margin-top: 14px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #00c87a);
+    color: #0a1628;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .capture-btn:active { transform: scale(0.97); opacity: 0.9; }
+  .capture-btn.secondary {
+    background: var(--surface2);
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  /* Input fields */
+  .field {
+    margin-bottom: 16px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: var(--accent);
+  }
+  .field input.highlight {
+    border-color: var(--accent);
+    background: rgba(0,229,160,0.05);
+  }
+  .field textarea { resize: none; min-height: 80px; }
+
+  /* Phone display */
+  .detected-phone {
+    background: rgba(0,229,160,0.08);
+    border: 1.5px solid rgba(0,229,160,0.3);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .detected-phone .phone-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--accent);
+    flex: 1;
+  }
+  .detected-phone .edit-btn {
+    background: none;
+    border: 1px solid rgba(0,229,160,0.4);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  /* Location card */
+  .location-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    border: 1.5px solid rgba(255,255,255,0.06);
+    transition: border-color 0.2s;
+  }
+  .location-row.has-location { border-color: rgba(0,152,255,0.4); background: rgba(0,152,255,0.06); }
+  .location-icon { font-size: 22px; }
+  .location-text { flex: 1; }
+  .location-text .loc-label { font-size: 11px; color: var(--muted); }
+  .location-text .loc-value { font-size: 14px; font-weight: 500; margin-top: 2px; }
+  .location-spinner {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-top-color: var(--accent2);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none;
+  }
+  .location-spinner.visible { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Summary card */
+  .summary-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; margin-top: 1px; }
+  .summary-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+  .summary-value { font-size: 15px; font-weight: 500; word-break: break-all; }
+
+  /* SMS preview */
+  .sms-preview {
+    background: var(--surface2);
+    border-radius: 14px;
+    padding: 16px;
+    margin: 16px 0;
+    border-left: 3px solid var(--accent);
+  }
+  .sms-preview .sms-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .sms-preview .sms-text { font-size: 14px; line-height: 1.6; color: var(--text); }
+
+  /* Send button */
+  .send-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0a1628;
+    border: none;
+    border-radius: 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.15s;
+    box-shadow: 0 8px 30px rgba(0,229,160,0.25);
+    margin-top: 16px;
+  }
+  .send-btn:active { transform: scale(0.97); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Success screen */
+  #success-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 24px 40px;
+    animation: slideUp 0.4s ease;
+  }
+  #success-screen.visible { display: block; }
+  .success-icon {
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, var(--accent), #00c87a);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    margin: 0 auto 28px;
+    box-shadow: 0 0 60px rgba(0,229,160,0.4);
+  }
+  .success-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+  .success-desc { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
+  .new-report-btn {
+    display: inline-block;
+    padding: 16px 32px;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  /* Nav buttons */
+  .nav-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .nav-back {
+    flex: 0 0 auto;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border: none;
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+  }
+  .nav-next {
+    flex: 1;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #00c87a);
+    color: #0a1628;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .nav-next:active { transform: scale(0.97); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 14px;
+    z-index: 999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { border-color: rgba(255,77,109,0.4); color: var(--danger); }
+  .toast.success { border-color: rgba(0,229,160,0.4); color: var(--accent); }
+
+  
+  .api-key-banner {
+    background: rgba(0,229,160,0.07);
+    border: 1.5px solid rgba(0,229,160,0.3);
+    border-radius: 14px;
+    padding: 16px;
+    margin: 0 16px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .api-key-banner.configured { border-color: rgba(0,229,160,0.5); background: rgba(0,229,160,0.06); }
+  .api-key-banner .key-icon { font-size: 22px; flex-shrink: 0; }
+  .api-key-banner .key-text { flex: 1; }
+  .api-key-banner .key-label { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
+  .api-key-banner .key-status { font-size: 13px; font-weight: 500; margin-top: 2px; }
+  .api-key-banner input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: monospace;
+    font-size: 12px;
+    margin-top: 10px;
+    outline: none;
+  }
+  .api-key-banner input:focus { border-color: var(--accent); }
+  .api-key-save {
+    margin-top: 8px;
+    width: 100%;
+    padding: 10px;
+    background: rgba(0,229,160,0.15);
+    border: 1px solid rgba(0,229,160,0.3);
+    border-radius: 10px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo-icon"><svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="16" width="28" height="16" rx="2" fill="#172240" stroke="#00C896" stroke-width="1.5"/>
+        <path d="M4 16 L8 9 L28 9 L32 16" stroke="#00C896" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <path d="M12 9 Q13 5 15 7 Q17 4 18 8" stroke="#ff6b6b" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M20 9 Q21 5 23 6 Q24 4 25 8" stroke="#4ecdc4" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M16 9 Q17 6 18 5 Q19 6 20 9" stroke="#ffe66d" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg></div>
+    <div class="logo-text">
+      <h1>Hjelp noen å få tingen sin tilbake</h1>
+      <p>Varsle eier på sekunder</p>
+    </div>
+  </header>
+
+  <!-- iPhone/Safari banner -->
+  <div id="safari-banner" style="display:none; margin: 0 16px 16px; background: rgba(0,152,255,0.08); border: 1.5px solid rgba(0,152,255,0.3); border-radius: 14px; padding: 14px 16px; display:none; align-items:center; gap:12px;">
+    <span style="font-size:22px">🍎</span>
+    <div>
+      <div style="font-size:13px; font-weight:600; margin-bottom:3px;">Du bruker iPhone</div>
+      <div style="font-size:12px; color:var(--muted); line-height:1.5;">For at kamera skal fungere må appen åpnes i <strong style="color:var(--text)">Safari</strong>. Kopier lenken og åpne den i Safari.</div>
+    </div>
+  </div>
+
+
+  <div class="steps">
+    <div class="step-dot active" id="dot-0"></div>
+    <div class="step-dot" id="dot-1"></div>
+    <div class="step-dot" id="dot-2"></div>
+    <div class="step-dot" id="dot-3"></div>
+    <div class="step-dot" id="dot-4"></div>
+  </div>
+
+  <!-- STEG 1: Kamera / merkelapp – fullskjerm -->
+  <div class="card active" id="step-0" style="padding:0; overflow:hidden; border-radius:var(--radius); position:relative; aspect-ratio: 3/4;">
+
+    <video id="video" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; display:block; border-radius:var(--radius);"></video>
+    <canvas id="canvas" style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:var(--radius);"></canvas>
+
+    <!-- Scan frame overlay -->
+    <div id="scan-overlay" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none;">
+      <div style="position:absolute; inset:0; background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.5) 100%);"></div>
+      <div id="scan-frame-box" style="width:80%; aspect-ratio:3/1; border:2px solid var(--accent); border-radius:10px; position:relative; box-shadow: 0 0 0 2000px rgba(0,0,0,0.35);">
+        <div class="scan-line"></div>
+        <!-- Corner decorations -->
+        <div style="position:absolute; top:-2px; left:-2px; width:20px; height:20px; border-top:3px solid white; border-left:3px solid white; border-radius:2px 0 0 0;"></div>
+        <div style="position:absolute; top:-2px; right:-2px; width:20px; height:20px; border-top:3px solid white; border-right:3px solid white; border-radius:0 2px 0 0;"></div>
+        <div style="position:absolute; bottom:-2px; left:-2px; width:20px; height:20px; border-bottom:3px solid white; border-left:3px solid white; border-radius:0 0 0 2px;"></div>
+        <div style="position:absolute; bottom:-2px; right:-2px; width:20px; height:20px; border-bottom:3px solid white; border-right:3px solid white; border-radius:0 0 2px 0;"></div>
+      </div>
+      <div style="margin-top:16px; font-size:13px; color:rgba(255,255,255,0.8); text-align:center; position:relative;">Hold merkelappen innenfor rammen 👆</div>
+    </div>
+
+    <!-- No camera fallback -->
+    <div id="cam-placeholder" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center; flex-direction:column; gap:12px; background:var(--surface2);">
+      <div style="font-size:48px;">📷</div>
+      <div style="font-size:14px; color:var(--muted); text-align:center; padding:0 24px;">Kamera ikke tilgjengelig – last opp bilde fra galleri</div>
+    </div>
+
+    <!-- Bottom controls -->
+    <div style="position:absolute; bottom:0; left:0; right:0; padding:20px 20px 24px; display:flex; flex-direction:column; gap:10px; align-items:center;">
+      <button id="capture-btn" onclick="capturePhoto()" style="width:72px; height:72px; border-radius:50%; background:white; border:4px solid rgba(255,255,255,0.4); display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,0.3);">📸</button>
+      <div style="display:flex; gap:10px; width:100%;">
+        <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFileCapture(event)">
+        <button onclick="document.getElementById('file-input').click()" style="flex:1; padding:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2); border-radius:10px; color:white; font-size:12px; cursor:pointer; backdrop-filter:blur(10px);">🖼️ Galleri</button>
+        <button onclick="goToStep(1)" style="flex:1; padding:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2); border-radius:10px; color:rgba(255,255,255,0.7); font-size:12px; cursor:pointer; backdrop-filter:blur(10px);">✍️ Manuelt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEG 2: Telefonnummer -->
+  <div class="card" id="step-1">
+    <div class="card-label">Nesten der 👀</div>
+    <div class="card-title">Eierens telefonnummer</div>
+    <div class="card-desc">Vi sender en SMS så eieren vet at noen bryr seg.</div>
+
+    <div class="field" id="phone-field">
+      <label>TELEFONNUMMER</label>
+      <input type="tel" id="phone-input" placeholder="f.eks. 91234567" inputmode="tel" oninput="liveValidatePhone(this)">
+      <div id="phone-hint" style="font-size:13px; margin-top:8px; min-height:20px;"></div>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-back" onclick="goToStep(0)">←</button>
+      <button class="nav-next" onclick="validatePhone()">
+        Neste → <span style="opacity:0.7">Bilde av gjenstand</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEG 3: Bilde av gjenstand -->
+  <div class="card" id="step-2">
+    <div class="card-label">Bra jobba! 📸</div>
+    <div class="card-title">Ta bilde av gjenstanden</div>
+    <div class="card-desc">Et bilde hjelper eieren å kjenne igjen tingen sin.</div>
+
+    <div class="camera-area" id="item-camera-area" onclick="startItemCamera()">
+      <video id="item-video" autoplay playsinline muted style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; inset:0;"></video>
+      <canvas id="item-canvas" style="display:none"></canvas>
+      <div class="camera-placeholder" id="item-cam-placeholder">
+        <div class="cam-icon">🧥</div>
+        <p>Trykk for å fotografere gjenstanden</p>
+      </div>
+    </div>
+
+    <button class="capture-btn" id="item-capture-btn" onclick="captureItemPhoto()" style="display:none">
+      📸 Ta bilde av gjenstand
+    </button>
+    <input type="file" id="item-file-input" accept="image/*" capture="environment" onchange="handleItemFileCapture(event)">
+    <button class="capture-btn secondary" onclick="document.getElementById('item-file-input').click()">
+      🖼️ Velg fra galleri
+    </button>
+
+    <div id="item-type-detected" style="display:none; margin-top:14px; background: rgba(0,229,160,0.08); border: 1.5px solid rgba(0,229,160,0.3); border-radius:12px; padding:12px 16px; display:none; align-items:center; gap:10px;">
+      <span style="font-size:20px" id="item-type-icon">📦</span>
+      <div style="flex:1">
+        <div style="font-size:11px; color:var(--muted);">GJENKJENT TYPE</div>
+        <div style="font-size:15px; font-weight:600;" id="item-type-label">–</div>
+      </div>
+      <button onclick="document.getElementById('item-type-detected').style.display='none'; document.getElementById('item-type-manual').style.display='block';" style="background:none; border:1px solid rgba(0,229,160,0.3); color:var(--accent); padding:5px 12px; border-radius:8px; font-size:12px; cursor:pointer;">Endre</button>
+    </div>
+
+    <div id="item-type-manual" style="display:none; margin-top:14px;">
+      <div class="field" style="margin:0">
+        <label>TYPE GJENSTAND</label>
+        <select id="item-type">
+          <option value="">Velg type...</option>
+          <option value="jakke">🧥 Jakke</option>
+          <option value="genser">👕 Genser/topp</option>
+          <option value="bukse">👖 Bukse</option>
+          <option value="sko">👟 Sko</option>
+          <option value="sekk">🎒 Sekk/bag</option>
+          <option value="lue/skjerf">🧣 Lue/skjerf/votter</option>
+          <option value="sportsutstyr">⚽ Sportsutstyr</option>
+          <option value="vannflaske">💧 Vannflaske</option>
+          <option value="annet">📦 Annet</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="nav-row" style="margin-top:16px">
+      <button class="nav-back" onclick="goToStep(1)">←</button>
+      <button class="nav-next" onclick="goToStep(3)">
+        Neste → <span style="opacity:0.7">Posisjon</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEG 4: Posisjon -->
+  <div class="card" id="step-3">
+    <div class="card-label">Snart fremme 📍</div>
+    <div class="card-title">Hvor ble gjenstanden funnet?</div>
+    <div class="card-desc">Så eieren vet akkurat hvor de kan hente tingen.</div>
+
+    <div class="location-row" id="location-row" onclick="getLocation()">
+      <span class="location-icon">📍</span>
+      <div class="location-text">
+        <div class="loc-label">POSISJON</div>
+        <div class="loc-value" id="loc-value">Trykk for å hente posisjon</div>
+      </div>
+      <div class="location-spinner" id="loc-spinner"></div>
+    </div>
+
+    <div id="gps-fallback" style="display:none; margin-bottom:12px; padding:12px 16px; background:rgba(255,170,0,0.1); border:1px solid rgba(255,170,0,0.3); border-radius:12px; font-size:13px; color:#ffaa00; line-height:1.5;">
+      📵 GPS ikke tilgjengelig. Skriv inn stedet manuelt nedenfor.
+    </div>
+
+    <div class="field">
+      <label>DETALJERT STED (etasje, rom, inngang...)</label>
+      <input type="text" id="place-input" placeholder="f.eks. 1.klasse-gangen, tennishallen, ved inngangen..." autocomplete="off">
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-back" onclick="goToStep(2)">←</button>
+      <button class="nav-next" onclick="goToSummary()">
+        Neste → <span style="opacity:0.7">Forhåndsvis</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEG 5: Oppsummering + send -->
+  <div class="card" id="step-4">
+    <div class="card-label">Siste steg! 🎯</div>
+    <div class="card-title">Du gjør en god ting nå 💚</div>
+    <div class="card-desc">En melding fra deg kan snu en dårlig dag.</div>
+
+    <div class="summary-row">
+      <span class="summary-icon">📱</span>
+      <div>
+        <div class="summary-label">MOTTAR SMS</div>
+        <div class="summary-value" id="sum-phone">–</div>
+      </div>
+    </div>
+    <div class="summary-row">
+      <span class="summary-icon">📍</span>
+      <div>
+        <div class="summary-label">FUNNSTED</div>
+        <div class="summary-value" id="sum-location">–</div>
+      </div>
+    </div>
+    <div class="summary-row">
+      <span class="summary-icon">📦</span>
+      <div>
+        <div class="summary-label">GJENSTAND</div>
+        <div class="summary-value" id="sum-item">Ikke spesifisert</div>
+      </div>
+    </div>
+    <div class="summary-row" id="sum-photo-row" style="display:none">
+      <span class="summary-icon">🖼️</span>
+      <div style="flex:1">
+        <div class="summary-label">BILDE AV GJENSTAND</div>
+        <img id="sum-photo-thumb" style="width:100%; border-radius:10px; margin-top:6px; max-height:160px; object-fit:cover;">
+      </div>
+    </div>
+
+    <div class="sms-preview">
+      <div class="sms-label">📨 SMS som sendes</div>
+      <div class="sms-text" id="sms-preview-text">–</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-back" onclick="goToStep(3)">←</button>
+      <button class="send-btn" id="send-btn" onclick="sendSMS()" style="flex:1; margin:0">
+        💚 Send hjelp på vei
+      </button>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div id="success-screen">
+
+    <!-- Hero section -->
+    <div style="text-align:center; padding: 40px 24px 28px;">
+      <div style="width:80px; height:80px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 20px; font-size:36px; box-shadow: 0 0 0 16px rgba(0,229,160,0.1);">✓</div>
+      <div style="font-family:'Syne',sans-serif; font-size:30px; font-weight:800; color:var(--text); margin-bottom:6px;">Du gjorde noen glad i dag!</div>
+      <div class="success-desc" id="success-desc" style="font-size:14px; color:var(--muted);">Eieren får nå SMS om at noen har funnet tingen deres. 🙌</div>
+    </div>
+
+    <!-- Counter card -->
+    <div id="counter-box" style="margin: 0 16px 16px; background: linear-gradient(135deg, #0d2040 0%, #0a1628 100%); border: 1px solid rgba(0,229,160,0.25); border-radius: 24px; padding: 28px 24px; text-align:center; position:relative; overflow:hidden;">
+      <div style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:rgba(0,229,160,0.05); border-radius:50%;"></div>
+      <div style="position:absolute; bottom:-30px; left:-30px; width:160px; height:160px; background:rgba(0,229,160,0.03); border-radius:50%;"></div>
+      <div style="font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px;">Eiere varslet av Glemmekassen</div>
+      <div id="counter-number" style="font-family:'Syne',sans-serif; font-size:88px; font-weight:800; color:var(--accent); line-height:0.9; margin-bottom:14px; text-shadow: 0 0 40px rgba(0,229,160,0.3);">1</div>
+      <div style="width:40px; height:2px; background:rgba(0,229,160,0.3); margin: 0 auto 14px; border-radius:2px;"></div>
+      <div style="font-size:13px; color:rgba(255,255,255,0.45); line-height:1.5;">Glemmekassen er under utprøving<br>— takk for at du hjelper! 🙌</div>
+    </div>
+
+    <!-- Feedback card -->
+    <div style="margin: 0 16px 16px; background: var(--surface2); border-radius: 20px; padding: 20px;">
+      <div style="font-size:12px; font-weight:600; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px;">Kom tingen hjem?</div>
+      <div style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Vi elsker å høre når det går bra! Gi oss gjerne en tilbakemelding.</div>
+      <a href="sms:95276157" style="display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:14px; padding:14px 16px; margin-bottom:8px; text-decoration:none; border: 1px solid rgba(255,255,255,0.05);">
+        <span style="width:36px; height:36px; background:rgba(0,229,160,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">📱</span>
+        <div>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:2px;">Send SMS</div>
+          <div style="color:var(--accent); font-size:14px; font-weight:600;">95276157</div>
+        </div>
+      </a>
+      <a id="feedback-email" style="display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:14px; padding:14px 16px; text-decoration:none; cursor:pointer; border: 1px solid rgba(255,255,255,0.05);" onclick="window.location='mai'+'lto:'+'heidi.thaulow'+'@'+'gmail.com'">
+        <span style="width:36px; height:36px; background:rgba(0,229,160,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">✉️</span>
+        <div>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:2px;">Send e-post</div>
+          <div style="color:var(--accent); font-size:14px; font-weight:600;">heidi.thaulow&#64;gmail.com</div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Save to homescreen -->
+    <div id="homescreen-card" style="margin: 0 16px 16px; background: var(--surface2); border-radius: 20px; padding: 18px 20px; display:none;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="width:44px; height:44px; background:rgba(0,229,160,0.12); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">📲</div>
+        <div style="flex:1;">
+          <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:2px;">Finn appen igjen neste gang</div>
+          <div style="font-size:12px; color:var(--muted); line-height:1.5;">Legg til på hjemskjermen så den alltid er klar.</div>
+        </div>
+      </div>
+      <button id="homescreen-btn" onclick="triggerInstall()" style="margin-top:14px; width:100%; padding:13px; background:var(--accent); color:#0a1628; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer;">Legg til på hjemskjermen</button>
+      <div id="iphone-install-steps" style="display:none; margin-top:12px; font-size:12px; color:var(--muted); line-height:1.8;">
+        1. Trykk på <strong style="color:var(--text);">Del-knappen</strong> nederst i Safari (firkant med pil opp)<br>
+        2. Scroll ned og trykk <strong style="color:var(--text);">"Legg til på Hjem-skjerm"</strong><br>
+        3. Trykk <strong style="color:var(--text);">"Legg til"</strong> øverst til høyre
+      </div>
+    </div>
+
+    <!-- Next action -->
+    <div style="padding: 0 16px 40px;">
+      <button class="new-report-btn" onclick="resetApp()" style="width:100%; padding:18px; font-size:16px; font-weight:700; border-radius:16px;">🎽 Hjelp neste eier</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Konfig fjernet – Sveve-nøkler ligger i Supabase -->
+
+<div class="toast" id="toast"></div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ── State ──────────────────────────────────────────────
+const state = {
+  phone: '',
+  lat: null,
+  lng: null,
+  locationText: '',
+  placeName: '',
+  itemType: '',
+  photoDataUrl: null,
+  stream: null,
+  cameraOpen: false
+};
+
+// ── Config (Sveve – nøkler i Supabase) ────────────────
+const sveve = { sender: 'Glemmekassen' };
+
+
+
+window.addEventListener('DOMContentLoaded', () => {
+  // Clear any old Twilio/Sveve credentials that may be cached
+  ['twilio_sid','twilio_token','twilio_from','sveve_user','sveve_pass','sveve_sender','anthropic_key'].forEach(k => localStorage.removeItem(k));
+
+
+
+  // Vis banner hvis iPhone men ikke Safari
+  const ua = navigator.userAgent;
+  const isIphone = /iPhone|iPad/i.test(ua);
+  const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS/i.test(ua);
+  if (isIphone && !isSafari) {
+    const banner = document.getElementById('safari-banner');
+    banner.style.display = 'flex';
+  }
+
+  autoStartCamera();
+  autoStartGPS();
+});
+
+async function autoStartCamera() {
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+    } catch(e1) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      } catch(e2) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+    }
+    state.stream = stream;
+    state.cameraOpen = true;
+    const video = document.getElementById('video');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    document.getElementById('cam-placeholder').style.display = 'none';
+    document.getElementById('scan-overlay').classList.add('visible');
+    document.getElementById('capture-btn').style.display = 'flex';
+  } catch(e) {
+    // Kamera ikke tilgjengelig – vis placeholder som normalt
+    document.getElementById('cam-placeholder').style.display = 'flex';
+  }
+}
+
+function autoStartGPS() {
+  if (!navigator.geolocation) return;
+  // iOS requires HTTPS - already satisfied by GitHub Pages
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      state.lat = pos.coords.latitude;
+      state.lng = pos.coords.longitude;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lng}&format=json`);
+        const geo = await res.json();
+        const addr = geo.address;
+        const parts = [addr.road, addr.suburb || addr.neighbourhood, addr.city || addr.town].filter(Boolean);
+        state.locationText = parts.join(', ');
+      } catch(e) {
+        state.locationText = `${state.lat.toFixed(5)}, ${state.lng.toFixed(5)}`;
+      }
+      // Oppdater UI hvis brukeren allerede er på posisjon-steget
+      const locVal = document.getElementById('loc-value');
+      const row = document.getElementById('location-row');
+      locVal.textContent = state.locationText;
+      row.classList.add('has-location');
+    },
+    () => {
+      // GPS feilet – vis fallback-melding
+      const fb = document.getElementById('gps-fallback');
+      if (fb) fb.style.display = 'block';
+      const locVal = document.getElementById('loc-value');
+      if (locVal) locVal.textContent = 'Ikke tilgjengelig';
+    },
+    { timeout: 10000, enableHighAccuracy: true }
+  );
+}
+
+// ── Steps ──────────────────────────────────────────────
+let currentStep = 0;
+
+function goToStep(n) {
+  document.getElementById(`step-${currentStep}`).classList.remove('active');
+  document.querySelectorAll('.step-dot').forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i < n) d.classList.add('done');
+    if (i === n) d.classList.add('active');
+  });
+  currentStep = n;
+  document.getElementById(`step-${currentStep}`).classList.add('active');
+
+  // Stop merkelapp-kamera når vi forlater steg 0
+  if (n !== 0 && state.stream) stopCamera();
+
+  // Auto-start gjenstandskamera på steg 2 – liten forsinkelse så steg 1-kamera rekker å stoppe
+  if (n === 2) setTimeout(() => autoStartItemCamera(), 400);
+}
+
+// ── Camera ─────────────────────────────────────────────
+async function startCamera() {
+  if (state.cameraOpen) {
+    // Kamera kjører allerede – bare ta bilde
+    capturePhoto();
+    return;
+  }
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+    } catch(e1) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      } catch(e2) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+    }
+    state.stream = stream;
+    state.cameraOpen = true;
+    const video = document.getElementById('video');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    document.getElementById('cam-placeholder').style.display = 'none';
+    document.getElementById('scan-overlay').classList.add('visible');
+    document.getElementById('capture-btn').style.display = 'flex';
+  } catch(e) {
+    document.getElementById('cam-placeholder').style.display = 'flex';
+    showToast('Kamera ikke tilgjengelig – bruk galleri', 'error');
+  }
+}
+
+function stopCamera() {
+  if (state.stream) {
+    state.stream.getTracks().forEach(t => t.stop());
+    state.stream = null;
+    state.cameraOpen = false;
+  }
+}
+
+async function capturePhoto() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  state.photoDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  stopCamera();
+
+  // Show captured image
+  document.getElementById('scan-overlay').classList.remove('visible');
+  canvas.style.display = 'block';
+  video.style.display = 'none';
+  document.getElementById('capture-btn').style.display = 'none';
+
+  await runOCR(state.photoDataUrl);
+}
+
+async function handleFileCapture(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    state.photoDataUrl = e.target.result;
+    const canvas = document.getElementById('canvas');
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width; canvas.height = img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      canvas.style.display = 'block';
+      document.getElementById('cam-placeholder').style.display = 'none';
+    };
+    img.src = state.photoDataUrl;
+    await runOCR(state.photoDataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Claude via Supabase proxy ──────────────────────────
+const SUPABASE_URL = 'https://jyajkriknplrhsxustpf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5YWprcmlrbnBscmhzeHVzdHBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNTk1NTMsImV4cCI6MjA4ODYzNTU1M30.5-IokgdMR2Jlj7jdM5s5Un_7BGI92y7g8W6SZs0vzVY';
+
+async function callClaude(dataUrl, prompt) {
+  const base64 = dataUrl.split(',')[1];
+  const mediaType = dataUrl.split(';')[0].split(':')[1];
+
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/claude-proxy`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+    },
+    body: JSON.stringify({ image: base64, mediaType, prompt })
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Proxy-feil');
+  return data.text || '';
+}
+
+// ── OCR via proxy ──────────────────────────────────────
+async function runOCR(dataUrl) {
+  showToast('🔍 Leser merkelapp...', '');
+
+  try {
+    const text = await callClaude(
+      dataUrl,
+      'This is a photo of a name tag or clothing label. Extract the phone number. It may include a +47 or 47 country code prefix — include it as-is. Return ONLY JSON: {"phone": "91234567", "name": "Ola"} — digits and optional +47 prefix only, name only if clearly visible. If no number found: {"phone": "", "name": ""}. No other text.'
+    );
+
+    let parsed = { phone: '', name: '' };
+    try {
+      parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+    } catch(e) {
+      const match = text.match(/\d{8}/);
+      if (match) parsed.phone = match[0];
+    }
+
+    goToStep(1);
+    const input = document.getElementById('phone-input');
+    if (parsed.phone) {
+      // Strip leading country code: +47, 0047, 47 if followed by 8 digits
+      let digits = parsed.phone.replace(/\D/g, '');
+      if (digits.length === 10 && digits.startsWith('47')) digits = digits.slice(2);
+      if (digits.length === 12 && digits.startsWith('0047')) digits = digits.slice(4);
+      const valid = digits.length === 8 && /^[49]/.test(digits);
+      input.value = digits;
+      liveValidatePhone(input);
+      if (valid) {
+        state.phone = digits;
+        showToast('✅ Fant nummer – sjekk at det stemmer', 'success');
+      } else {
+        showToast('⚠️ Usikkert nummer – vennligst sjekk', 'error');
+      }
+    } else {
+      showToast('Fant ikke nummer – skriv inn manuelt', 'error');
+    }
+  } catch(e) {
+    showToast(`OCR-feil: ${e.message}`, 'error');
+    goToStep(1);
+  }
+}
+
+function normalizeNorwegian(raw) {
+  let d = raw.replace(/\D/g, '');
+  if (d.startsWith('0047') && d.length === 12) d = d.slice(4);
+  else if (d.startsWith('47') && d.length === 10) d = d.slice(2);
+  return d;
+}
+
+function liveValidatePhone(input) {
+  const digits = normalizeNorwegian(input.value);
+  const hint = document.getElementById('phone-hint');
+  if (!digits) { hint.textContent = ''; return; }
+  if (digits.length < 8) {
+    hint.innerHTML = '<span style="color:#ffaa00">⚠️ For kort – norske nummer har 8 siffer</span>';
+  } else if (digits.length > 8) {
+    hint.innerHTML = '<span style="color:#ff4d6d">❌ Sjekk nummeret – ble det med landskode (+47)?</span>';
+  } else if (!/^[49]/.test(digits)) {
+    hint.innerHTML = '<span style="color:#ffaa00">⚠️ Norske mobilnummer starter med 4 eller 9</span>';
+  } else {
+    hint.innerHTML = '<span style="color:#00e5a0">✅ ' + digits.slice(0,3) + ' ' + digits.slice(3,5) + ' ' + digits.slice(5) + '</span>';
+  }
+}
+
+function formatPhone(num) {
+  const n = num.replace(/\D/g, '');
+  if (n.length === 8) return `${n.slice(0,3)} ${n.slice(3,5)} ${n.slice(5)}`;
+  return num;
+}
+
+// ── Phone validation ───────────────────────────────────
+function validatePhone() {
+  const raw = normalizeNorwegian(document.getElementById('phone-input').value);
+  if (raw.length !== 8) {
+    showToast('Telefonnummer må være 8 siffer (uten +47)', 'error');
+    return;
+  }
+  if (!/^[49]/.test(raw)) {
+    showToast('Norske mobilnummer starter med 4 eller 9', 'error');
+    return;
+  }
+  state.phone = raw;
+  goToStep(2);
+}
+
+// ── Item camera ────────────────────────────────────────
+let itemStream = null;
+
+async function autoStartItemCamera() {
+  if (itemStream || state.itemPhotoDataUrl) return;
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+    } catch(e1) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      } catch(e2) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+    }
+    itemStream = stream;
+    const video = document.getElementById('item-video');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    document.getElementById('item-cam-placeholder').style.display = 'none';
+    document.getElementById('item-capture-btn').style.display = 'flex';
+  } catch(e) {
+    // Stille feil – vis placeholder
+  }
+}
+
+async function startItemCamera() {
+  if (itemStream) { captureItemPhoto(); return; }
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+    } catch(e1) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      } catch(e2) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+    }
+    itemStream = stream;
+    const video = document.getElementById('item-video');
+    video.srcObject = stream;
+    document.getElementById('item-cam-placeholder').style.display = 'none';
+    document.getElementById('item-capture-btn').style.display = 'flex';
+    video.style.display = 'block';
+  } catch(e) {
+    showToast('Kamera ikke tilgjengelig – bruk filvelger', 'error');
+    document.getElementById('item-file-input').click();
+  }
+}
+
+async function captureItemPhoto() {
+  const video = document.getElementById('item-video');
+  const canvas = document.getElementById('item-canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  state.itemPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+  if (itemStream) { itemStream.getTracks().forEach(t => t.stop()); itemStream = null; }
+  canvas.style.display = 'block';
+  video.style.display = 'none';
+  document.getElementById('item-capture-btn').style.display = 'none';
+  showToast('🔍 Gjenkjenner gjenstand...', '');
+
+  await recognizeItem(state.itemPhotoDataUrl);
+}
+
+async function recognizeItem(dataUrl) {
+  try {
+    const text = await callClaude(
+      dataUrl,
+      'This is a lost & found item. What type of item is it? Return ONLY a JSON object: {"type": "jakke"} — use exactly one of these values: jakke, genser, bukse, sko, sekk, lue/skjerf, sportsutstyr, annet. No other text.'
+    );
+
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    const validTypes = ['jakke', 'genser', 'bukse', 'sko', 'sekk', 'lue/skjerf', 'sportsutstyr', 'annet'];
+    if (parsed.type && validTypes.includes(parsed.type)) {
+      document.getElementById('item-type').value = parsed.type;
+      const label = document.getElementById('item-type').options[document.getElementById('item-type').selectedIndex].text;
+      const emoji = label.split(' ')[0];
+      const name = label.split(' ').slice(1).join(' ');
+      document.getElementById('item-type-icon').textContent = emoji;
+      document.getElementById('item-type-label').textContent = name;
+      document.getElementById('item-type-detected').style.display = 'flex';
+      document.getElementById('item-type-manual').style.display = 'none';
+      showToast(`✅ Gjenkjent: ${label}`, 'success');
+    } else {
+      document.getElementById('item-type-manual').style.display = 'block';
+      showToast('✅ Bilde tatt – velg type manuelt', 'success');
+    }
+  } catch(e) {
+    showToast('✅ Bilde tatt', 'success');
+  }
+}
+
+function handleItemFileCapture(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    state.itemPhotoDataUrl = e.target.result;
+    const canvas = document.getElementById('item-canvas');
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width; canvas.height = img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      canvas.style.display = 'block';
+      document.getElementById('item-cam-placeholder').style.display = 'none';
+    };
+    img.src = state.itemPhotoDataUrl;
+    showToast('🔍 Gjenkjenner gjenstand...', '');
+    await recognizeItem(state.itemPhotoDataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Geolocation ────────────────────────────────────────
+function getLocation() {
+  const spinner = document.getElementById('loc-spinner');
+  const locVal = document.getElementById('loc-value');
+  const row = document.getElementById('location-row');
+
+  spinner.classList.add('visible');
+  locVal.textContent = 'Henter posisjon...';
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      state.lat = pos.coords.latitude;
+      state.lng = pos.coords.longitude;
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lng}&format=json`);
+        const geo = await res.json();
+        const addr = geo.address;
+        const parts = [addr.road, addr.suburb || addr.neighbourhood, addr.city || addr.town].filter(Boolean);
+        state.locationText = parts.join(', ');
+      } catch(e) {
+        state.locationText = `${state.lat.toFixed(5)}, ${state.lng.toFixed(5)}`;
+      }
+
+      spinner.classList.remove('visible');
+      locVal.textContent = state.locationText;
+      row.classList.add('has-location');
+    },
+    (err) => {
+      spinner.classList.remove('visible');
+      locVal.textContent = 'Posisjon ikke tilgjengelig – skriv inn sted under';
+      showToast('Kunne ikke hente GPS', 'error');
+    },
+    { timeout: 10000, enableHighAccuracy: true }
+  );
+}
+
+// ── Summary ────────────────────────────────────────────
+function goToSummary() {
+  state.placeName = document.getElementById('place-input').value.trim();
+  state.itemType = document.getElementById('item-type').value;
+
+  const locationStr = [state.placeName, state.locationText].filter(Boolean).join(' — ');
+  if (!locationStr) {
+    showToast('Skriv inn eller hent posisjon', 'error');
+    return;
+  }
+
+  const itemLabel = state.itemType
+    ? document.getElementById('item-type').options[document.getElementById('item-type').selectedIndex].text
+    : null;
+
+  document.getElementById('sum-phone').textContent = formatPhone(state.phone);
+  document.getElementById('sum-location').textContent = locationStr;
+  document.getElementById('sum-item').textContent = itemLabel || 'Ikke spesifisert';
+
+  // Vis bilde av gjenstand i oppsummering
+  if (state.itemPhotoDataUrl) {
+    document.getElementById('sum-photo-thumb').src = state.itemPhotoDataUrl;
+    document.getElementById('sum-photo-row').style.display = 'flex';
+  }
+
+  // Build SMS (bilde-URL legges til etter opplasting i sendSMS)
+  const mapLink = state.lat ? `https://maps.google.com/?q=${state.lat},${state.lng}` : '';
+  const itemPart = itemLabel ? ` (${itemLabel.replace(/^.\s/, '')})` : '';
+  const locationPart = state.placeName || state.locationText;
+  state.mapLink = mapLink;
+  state.locationPart = locationPart;
+  state.itemPart = itemPart;
+
+  const smsTxt = buildSmsText(state.itemPhotoDataUrl ? 'tinyurl.com/...' : '');
+  document.getElementById('sms-preview-text').textContent = smsTxt;
+
+  goToStep(4);
+}
+
+function buildSmsText(bildeUrl) {
+  const bildeLinje = bildeUrl ? `\n📸 Se bilde: ${bildeUrl}` : '';
+  return `Hei! Vi fant en gjenstand${state.itemPart} på ${state.locationPart} som kan tilhøre deg. 📍${state.mapLink ? ' ' + state.mapLink : ' ' + state.locationPart}${bildeLinje}
+
+Hent den så fort du kan – jo raskere, desto bedre sjanse for at den fortsatt er der! 🏃
+
+Glemmekassen varsler eiere av gjenglemt utstyr. Fikk du tingen tilbake? Send gjerne tilbakemelding! 📲 95276157 eller heidi.thaulow@gmail.com
+
+– Glemmekassen`;
+}
+
+// ── Send SMS ───────────────────────────────────────────
+// URL-forkorting skjer server-side i Edge Function (unngår CORS)
+
+async function uploadBilde(dataUrl) {
+  if (!dataUrl) return null;
+  try {
+    const blob = await (await fetch(dataUrl)).blob();
+    const filename = `bilde_${Date.now()}.jpg`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/bilder/${filename}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'image/jpeg',
+        'x-upsert': 'true'
+      },
+      body: blob
+    });
+    if (!res.ok) return null;
+    const fullUrl = `${SUPABASE_URL}/storage/v1/object/public/bilder/${filename}`;
+    // Build bilde-page URL then shorten it
+    const bp = new URLSearchParams();
+    bp.set('bilde', fullUrl);
+    if (state.itemType) bp.set('gjenstand', state.itemType);
+    if (state.locationPart) bp.set('sted', state.locationPart);
+    if (state.lat) bp.set('lat', state.lat);
+    if (state.lng) bp.set('lng', state.lng);
+    bp.set('tid', new Date().toISOString());
+    const bildePageUrl = `https://heiditha.github.io/Glemmekassen/bilde.html?${bp.toString()}`;
+    return { fullUrl, bildePageUrl };
+  } catch(e) {
+    return null;
+  }
+}
+
+async function sendSMS() {
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Laster opp bilde...';
+
+  const toNumber = state.phone.replace(/\D/g, '').replace(/^47/, '');
+
+  try {
+    // Last opp bilde og bygg SMS-tekst med lenke
+    const bildeResult = await uploadBilde(state.itemPhotoDataUrl);
+    const bildePageUrl = bildeResult?.bildePageUrl || '';
+    const fullUrl      = bildeResult?.fullUrl || null;
+    // Send bildePageUrl separat – Edge Function forkorter og setter inn i SMS
+    const msgUtenBilde = buildSmsText('__BILDE_URL__');
+
+    btn.textContent = '⏳ Sender SMS...';
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/claude-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({
+        action: 'sms',
+        to: toNumber,
+        msg: msgUtenBilde,
+        bilde_page_url: bildePageUrl,
+        bilde_url: fullUrl,
+        gjenstand: state.itemType,
+        stedsnavn: state.locationPart,
+        lat: state.lat,
+        lng: state.lng,
+        telefon: toNumber
+      })
+    });
+    const data = await res.json();
+
+    if (data.ok || data.sid) {
+      showSuccess(false);
+    } else {
+      const err = data.error || 'Ukjent feil';
+      throw new Error(err);
+    }
+  } catch(e) {
+    showToast(`Feil: ${e.message}`, 'error');
+    btn.disabled = false;
+    btn.textContent = '💚 Send hjelp på vei';
+  }
+}
+
+function showSuccess(demo) {
+  document.getElementById('step-4').classList.remove('active');
+  document.querySelectorAll('.step-dot').forEach(d => d.classList.add('done'));
+  const screen = document.getElementById('success-screen');
+  screen.classList.add('visible');
+  document.getElementById('success-desc').textContent = demo
+    ? `Demo-modus: SMS ville blitt sendt til ${formatPhone(state.phone)}.`
+    : `SMS sendt til ${formatPhone(state.phone)} ✓`;
+
+  incrementCounter();
+  showHomescreenCard();
+}
+
+async function incrementCounter() {
+  try {
+    // Hent nåværende teller
+    const getRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_counter`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({})
+    });
+    if (getRes.ok) {
+      const val = await getRes.json();
+      animateCounter(typeof val === 'number' ? val : 1);
+    } else {
+      // Fallback: tell lokalt i session
+      const current = parseInt(sessionStorage.getItem('glemmekassen_count') || '0') + 1;
+      sessionStorage.setItem('glemmekassen_count', current);
+      animateCounter(current);
+    }
+  } catch(e) {
+    const current = parseInt(sessionStorage.getItem('glemmekassen_count') || '0') + 1;
+    sessionStorage.setItem('glemmekassen_count', current);
+    animateCounter(current);
+  }
+}
+
+function animateCounter(target) {
+  const el = document.getElementById('counter-number');
+  const duration = 1200;
+  const start = Math.max(0, target - 30);
+  const startTime = performance.now();
+
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(start + (target - start) * eased);
+    el.textContent = current.toLocaleString('no');
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function resetApp() {
+  Object.assign(state, { phone: '', lat: null, lng: null, locationText: '', placeName: '', itemType: '', photoDataUrl: null, itemPhotoDataUrl: null });
+  if (itemStream) { itemStream.getTracks().forEach(t => t.stop()); itemStream = null; }
+  document.getElementById('success-screen').classList.remove('visible');
+  document.getElementById('phone-input').value = '';
+  document.getElementById('place-input').value = '';
+  document.getElementById('item-type-detected').style.display = 'none';
+  document.getElementById('item-type-manual').style.display = 'none';
+  document.getElementById('item-type').value = '';
+  document.getElementById('phone-hint').textContent = '';
+  document.getElementById('canvas').style.display = 'none';
+  document.getElementById('cam-placeholder').style.display = 'flex';
+  document.getElementById('capture-btn').style.display = 'none';
+  document.getElementById('item-canvas').style.display = 'none';
+  document.getElementById('item-cam-placeholder').style.display = 'flex';
+  document.getElementById('item-capture-btn').style.display = 'none';
+  document.getElementById('item-video').style.display = 'none';
+  document.getElementById('location-row').classList.remove('has-location');
+  document.getElementById('loc-value').textContent = 'Trykk for å hente posisjon';
+  document.getElementById('sum-photo-row').style.display = 'none';
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('send-btn').textContent = '💚 Send hjelp på vei';
+
+  currentStep = 0;
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.step-dot').forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i === 0) d.classList.add('active');
+  });
+  document.getElementById('step-0').classList.add('active');
+  startCamera();
+}
+
+// ── Toast ──────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Homescreen card ────────────────────────────────────
+function showHomescreenCard() {
+  const card = document.getElementById('homescreen-card');
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  const isAndroidInstalled = window.matchMedia('(display-mode: standalone)').matches;
+  if (isStandalone || isAndroidInstalled) return; // allerede installert
+  card.style.display = 'block';
+  if (isIOS) {
+    document.getElementById('homescreen-btn').textContent = 'Se hvordan du gjør det';
+  } else if (!deferredPrompt) {
+    // Android men ingen install-prompt – vis manuell veiledning
+    document.getElementById('homescreen-btn').textContent = 'Legg til på hjemskjermen';
+  }
+}
+</script>
+
+<!-- PWA Install Banner -->
+<div id="install-banner" style="display:none; position:fixed; bottom:80px; left:16px; right:16px; background:#111d35; border:1px solid rgba(0,229,160,0.3); border-radius:16px; padding:16px 20px; z-index:9999; display:none; align-items:center; gap:14px; box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+  <span style="font-size:32px"><svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="16" width="28" height="16" rx="2" fill="#172240" stroke="#00C896" stroke-width="1.5"/>
+        <path d="M4 16 L8 9 L28 9 L32 16" stroke="#00C896" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <path d="M12 9 Q13 5 15 7 Q17 4 18 8" stroke="#ff6b6b" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M20 9 Q21 5 23 6 Q24 4 25 8" stroke="#4ecdc4" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M16 9 Q17 6 18 5 Q19 6 20 9" stroke="#ffe66d" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg></span>
+  <div style="flex:1">
+    <div style="font-weight:600; color:#f0f4ff; font-size:15px;">Installer Glemmekassen</div>
+    <div style="font-size:12px; color:#7a8aaa; margin-top:2px;">Legg til på hjemskjermen for raskere tilgang</div>
+  </div>
+  <button onclick="installApp()" style="background:#00e5a0; color:#0a1628; border:none; border-radius:10px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Installer</button>
+  <button onclick="document.getElementById('install-banner').style.display='none'" style="background:none; border:none; color:#7a8aaa; font-size:20px; cursor:pointer; padding:0 4px;">×</button>
+</div>
+
+<script>
+// Service Worker
+if ('serviceWorker' in navigator) {
+  // Tving avregistrering av gamle service workers og slett all cache
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  });
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+  // Registrer fersk
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/Glemmekassen/sw.js').catch(() => {});
+  });
+}
+
+// PWA Install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('install-banner');
+  banner.style.display = 'flex';
+});
+
+function triggerInstall() {
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+  } else if (isIOS) {
+    document.getElementById('iphone-install-steps').style.display = 'block';
+    document.getElementById('homescreen-btn').style.display = 'none';
+  } else {
+    // Android uten prompt – vis manuell veiledning
+    document.getElementById('iphone-install-steps').innerHTML =
+      '1. Trykk på <strong style="color:var(--text)">meny-knappen</strong> (⋮) øverst til høyre i Chrome<br>' +
+      '2. Trykk <strong style="color:var(--text)">"Legg til på startskjermen"</strong><br>' +
+      '3. Trykk <strong style="color:var(--text)">"Legg til"</strong>';
+    document.getElementById('iphone-install-steps').style.display = 'block';
+    document.getElementById('homescreen-btn').style.display = 'none';
+  }
+}
+
