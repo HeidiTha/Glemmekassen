@@ -62,7 +62,8 @@
   .app {
     position: relative;
     z-index: 1;
-    max-width: 480px;
+    width: 100%;
+    max-width: 100%;
     margin: 0 auto;
     padding: 0 0 40px;
   }
@@ -75,23 +76,23 @@
     gap: 14px;
   }
   .logo-icon {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 10px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 22px;
     flex-shrink: 0;
     box-shadow: 0 4px 20px rgba(0,229,160,0.3);
   }
   .logo-text h1 {
     font-family: 'Syne', sans-serif;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
     letter-spacing: -0.3px;
-    line-height: 1.35;
+    line-height: 1.2;
   }
   .logo-text p {
     font-size: 12px;
@@ -546,6 +547,7 @@
       <h1>Finn navnelapp med telefonnummer – SMS går automatisk til eieren</h1>
       <p>Scan nummeret – eieren får SMS</p>
     </div>
+  <button onclick="shareApp()" style="margin-left:auto; background:rgba(0,229,160,0.12); border:1.5px solid rgba(0,229,160,0.3); color:var(--accent); border-radius:12px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; flex-shrink:0;">🔗 Del</button>
   </header>
 
   <!-- iPhone/Safari banner -->
@@ -584,7 +586,6 @@
         <div style="position:absolute; bottom:-2px; right:-2px; width:20px; height:20px; border-bottom:3px solid white; border-right:3px solid white; border-radius:0 0 2px 0;"></div>
       </div>
       <div style="margin-top:16px; font-size:13px; color:rgba(255,255,255,0.8); text-align:center; position:relative;">Hold telefonnummeret innenfor rammen</div>
-      <div style="margin-top:6px; font-size:11px; color:rgba(255,255,255,0.5); text-align:center; position:relative;">Sjekk nakken, innsiden, bunnen eller siden av gjenstanden</div>
     </div>
 
     <!-- No camera fallback -->
@@ -839,7 +840,7 @@ const state = {
   lng: null,
   locationText: '',
   placeName: '',
-  itemType: '',
+  itemType: '', itemColor: '',
   photoDataUrl: null,
   stream: null,
   cameraOpen: false
@@ -946,7 +947,7 @@ function goToStep(n) {
   // Stop merkelapp-kamera når vi forlater steg 0
   if (n !== 0 && state.stream) stopCamera();
 
-  // Auto-start gjenstandskamera på steg 2 – liten forsinkelse så steg 1-kamera rekker å stoppe
+  // Auto-start gjenstandskamera på steg 2
   if (n === 2) setTimeout(() => autoStartItemCamera(), 400);
 }
 
@@ -1215,7 +1216,7 @@ async function recognizeItem(dataUrl) {
   try {
     const text = await callClaude(
       dataUrl,
-      'This is a lost & found item. What type of item is it? Return ONLY a JSON object: {"type": "jakke"} — use exactly one of these values: jakke, genser, bukse, sko, sekk, lue/skjerf, sportsutstyr, annet. No other text.'
+      'This is a lost & found item. What type and color is it? Return ONLY a JSON object: {"type": "jakke", "color": "rød"} — type must be one of: jakke, genser, bukse, sko, sekk, lue/skjerf, sportsutstyr, annet. Color: short Norwegian description e.g. rød, mørkeblå, svart/hvit. No other text.'
     );
 
     const clean = text.replace(/```json|```/g, '').trim();
@@ -1228,7 +1229,9 @@ async function recognizeItem(dataUrl) {
       const emoji = label.split(' ')[0];
       const name = label.split(' ').slice(1).join(' ');
       document.getElementById('item-type-icon').textContent = emoji;
-      document.getElementById('item-type-label').textContent = name;
+      const colorText = parsed.color ? ' – ' + parsed.color : '';
+      document.getElementById('item-type-label').textContent = name + colorText;
+      state.itemColor = parsed.color || '';
       document.getElementById('item-type-detected').style.display = 'flex';
       document.getElementById('item-type-manual').style.display = 'none';
       showToast(`✅ Gjenkjent: ${label}`, 'success');
@@ -1326,7 +1329,8 @@ function goToSummary() {
 
   // Build SMS (bilde-URL legges til etter opplasting i sendSMS)
   const mapLink = state.lat ? `https://maps.google.com/?q=${state.lat},${state.lng}` : '';
-  const itemPart = itemLabel ? ` (${itemLabel.replace(/^.\s/, '')})` : '';
+  const colorSuffix = state.itemColor ? ', ' + state.itemColor : '';
+  const itemPart = itemLabel ? ` (${itemLabel.replace(/^.\s/, '')}${colorSuffix})` : '';
   const locationPart = state.placeName || state.locationText;
   state.mapLink = mapLink;
   state.locationPart = locationPart;
@@ -1334,6 +1338,7 @@ function goToSummary() {
 
   const smsTxt = buildSmsText(state.itemPhotoDataUrl ? 'tinyurl.com/...' : '');
   document.getElementById('sms-preview-text').textContent = smsTxt;
+  state.smsText = smsTxt;
 
   goToStep(4);
 }
@@ -1346,7 +1351,9 @@ Hent den så fort du kan – jo raskere, desto bedre sjanse for at den fortsatt 
 
 Glemmekassen varsler eiere av gjenglemt utstyr. Fikk du tingen tilbake? Send gjerne tilbakemelding! 📲 95276157 eller heidi.thaulow@gmail.com
 
-– Glemmekassen`;
+– Glemmekassen
+
+📲 Scan klær du finner: heiditha.github.io/Glemmekassen`;
 }
 
 // ── Send SMS ───────────────────────────────────────────
@@ -1377,7 +1384,8 @@ async function uploadBilde(dataUrl) {
     if (state.lng) bp.set('lng', state.lng);
     bp.set('tid', new Date().toISOString());
     const bildePageUrl = `https://heiditha.github.io/Glemmekassen/bilde.html?${bp.toString()}`;
-    return { fullUrl, bildePageUrl };
+    const shortUrl = await kortUrl(bildePageUrl);
+    return { fullUrl, shortUrl };
   } catch(e) {
     return null;
   }
@@ -1393,10 +1401,9 @@ async function sendSMS() {
   try {
     // Last opp bilde og bygg SMS-tekst med lenke
     const bildeResult = await uploadBilde(state.itemPhotoDataUrl);
-    const bildePageUrl = bildeResult?.bildePageUrl || '';
-    const fullUrl      = bildeResult?.fullUrl || null;
-    // Send bildePageUrl separat – Edge Function forkorter og setter inn i SMS
-    const msgUtenBilde = buildSmsText('__BILDE_URL__');
+    const shortUrl = bildeResult?.shortUrl || '';
+    const fullUrl  = bildeResult?.fullUrl  || null;
+    const finalMsg = buildSmsText(shortUrl);
 
     btn.textContent = '⏳ Sender SMS...';
 
@@ -1409,8 +1416,7 @@ async function sendSMS() {
       body: JSON.stringify({
         action: 'sms',
         to: toNumber,
-        msg: msgUtenBilde,
-        bilde_page_url: bildePageUrl,
+        msg: finalMsg,
         bilde_url: fullUrl,
         gjenstand: state.itemType,
         stedsnavn: state.locationPart,
@@ -1493,7 +1499,7 @@ function animateCounter(target) {
 }
 
 function resetApp() {
-  Object.assign(state, { phone: '', lat: null, lng: null, locationText: '', placeName: '', itemType: '', photoDataUrl: null, itemPhotoDataUrl: null });
+  Object.assign(state, { phone: '', lat: null, lng: null, locationText: '', placeName: '', itemType: '', itemColor: '', photoDataUrl: null, itemPhotoDataUrl: null });
   if (itemStream) { itemStream.getTracks().forEach(t => t.stop()); itemStream = null; }
   document.getElementById('success-screen').classList.remove('visible');
   document.getElementById('phone-input').value = '';
@@ -1525,6 +1531,16 @@ function resetApp() {
   startCamera();
 }
 
+// ── Del app ───────────────────────────────────────────
+function shareApp() {
+  const url = 'https://heiditha.github.io/Glemmekassen/';
+  if (navigator.share) {
+    navigator.share({ title: 'Glemmekassen', text: 'Scan gjenglemt utstyr og varsle eieren automatisk!', url });
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('📋 Lenke kopiert!', 'success'));
+  }
+}
+
 // ── Toast ──────────────────────────────────────────────
 let toastTimer;
 function showToast(msg, type) {
@@ -1533,22 +1549,6 @@ function showToast(msg, type) {
   t.className = `toast ${type} show`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// ── Homescreen card ────────────────────────────────────
-function showHomescreenCard() {
-  const card = document.getElementById('homescreen-card');
-  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone;
-  const isAndroidInstalled = window.matchMedia('(display-mode: standalone)').matches;
-  if (isStandalone || isAndroidInstalled) return; // allerede installert
-  card.style.display = 'block';
-  if (isIOS) {
-    document.getElementById('homescreen-btn').textContent = 'Se hvordan du gjør det';
-  } else if (!deferredPrompt) {
-    // Android men ingen install-prompt – vis manuell veiledning
-    document.getElementById('homescreen-btn').textContent = 'Legg til på hjemskjermen';
-  }
 }
 </script>
 
@@ -1565,7 +1565,7 @@ function showHomescreenCard() {
     <div style="font-weight:600; color:#f0f4ff; font-size:15px;">Installer Glemmekassen</div>
     <div style="font-size:12px; color:#7a8aaa; margin-top:2px;">Legg til på hjemskjermen for raskere tilgang</div>
   </div>
-  <button onclick="installApp()" style="background:#00e5a0; color:#0a1628; border:none; border-radius:10px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Installer</button>
+  <button onclick="triggerInstall()" style="background:#00e5a0; color:#0a1628; border:none; border-radius:10px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Installer</button>
   <button onclick="document.getElementById('install-banner').style.display='none'" style="background:none; border:none; color:#7a8aaa; font-size:20px; cursor:pointer; padding:0 4px;">×</button>
 </div>
 
@@ -1593,21 +1593,26 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 function triggerInstall() {
-  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
   if (deferredPrompt) {
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
-  } else if (isIOS) {
-    document.getElementById('iphone-install-steps').style.display = 'block';
-    document.getElementById('homescreen-btn').style.display = 'none';
   } else {
-    // Android uten prompt – vis manuell veiledning
-    document.getElementById('iphone-install-steps').innerHTML =
-      '1. Trykk på <strong style="color:var(--text)">meny-knappen</strong> (⋮) øverst til høyre i Chrome<br>' +
-      '2. Trykk <strong style="color:var(--text)">"Legg til på startskjermen"</strong><br>' +
-      '3. Trykk <strong style="color:var(--text)">"Legg til"</strong>';
+    // iPhone: show manual steps
     document.getElementById('iphone-install-steps').style.display = 'block';
     document.getElementById('homescreen-btn').style.display = 'none';
   }
 }
 
+function showHomescreenCard() {
+  const card = document.getElementById('homescreen-card');
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  const isAndroidInstalled = window.matchMedia('(display-mode: standalone)').matches;
+  // Only show if not already installed
+  if (!isStandalone && !isAndroidInstalled) {
+    card.style.display = 'block';
+    if (isIOS) {
+      document.getElementById('homescreen-btn').textContent = 'Se hvordan du gjør det';
+    }
+  }
+}
