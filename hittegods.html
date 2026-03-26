@@ -1384,8 +1384,7 @@ async function uploadBilde(dataUrl) {
     if (state.lng) bp.set('lng', state.lng);
     bp.set('tid', new Date().toISOString());
     const bildePageUrl = `https://heiditha.github.io/Glemmekassen/bilde.html?${bp.toString()}`;
-    const shortUrl = await kortUrl(bildePageUrl);
-    return { fullUrl, shortUrl };
+    return { fullUrl, bildePageUrl };
   } catch(e) {
     return null;
   }
@@ -1401,9 +1400,9 @@ async function sendSMS() {
   try {
     // Last opp bilde og bygg SMS-tekst med lenke
     const bildeResult = await uploadBilde(state.itemPhotoDataUrl);
-    const shortUrl = bildeResult?.shortUrl || '';
+    const bildePageUrl = bildeResult?.bildePageUrl || '';
     const fullUrl  = bildeResult?.fullUrl  || null;
-    const finalMsg = buildSmsText(shortUrl);
+    const finalMsg = buildSmsText(bildePageUrl ? '__BILDE_URL__' : '');
 
     btn.textContent = '⏳ Sender SMS...';
 
@@ -1417,6 +1416,7 @@ async function sendSMS() {
         action: 'sms',
         to: toNumber,
         msg: finalMsg,
+        bilde_page_url: bildePageUrl,
         bilde_url: fullUrl,
         gjenstand: state.itemType,
         stedsnavn: state.locationPart,
