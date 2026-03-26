@@ -767,40 +767,45 @@
   <div id="success-screen">
 
     <!-- Hero section -->
-    <div style="text-align:center; padding: 40px 24px 28px;">
-      <div style="width:80px; height:80px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 20px; font-size:36px; box-shadow: 0 0 0 16px rgba(0,229,160,0.1);">✓</div>
-      <div style="font-family:'Syne',sans-serif; font-size:30px; font-weight:800; color:var(--text); margin-bottom:6px;">Du gjorde noen glad i dag!</div>
-      <div class="success-desc" id="success-desc" style="font-size:14px; color:var(--muted);">Eieren får nå SMS om at noen har funnet tingen deres. 🙌</div>
+    <div style="text-align:center; padding: 40px 24px 20px;">
+      <div id="success-icon" style="width:80px; height:80px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 20px; font-size:36px; box-shadow: 0 0 0 16px rgba(0,229,160,0.1); transition: transform 0.3s;">✓</div>
+      <div style="font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--text); margin-bottom:6px;" id="success-title">Du gjorde noen glad! 🎉</div>
+      <div class="success-desc" id="success-desc" style="font-size:14px; color:var(--muted);">SMS er sendt – eieren er varslet.</div>
     </div>
 
-    <!-- Counter card -->
-    <div id="counter-box" style="margin: 0 16px 16px; background: linear-gradient(135deg, #0d2040 0%, #0a1628 100%); border: 1px solid rgba(0,229,160,0.25); border-radius: 24px; padding: 28px 24px; text-align:center; position:relative; overflow:hidden;">
+    <!-- Dual counter card -->
+    <div id="counter-box" style="margin: 0 16px 16px; background: linear-gradient(135deg, #0d2040 0%, #0a1628 100%); border: 1px solid rgba(0,229,160,0.25); border-radius: 24px; padding: 24px; text-align:center; position:relative; overflow:hidden;">
       <div style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:rgba(0,229,160,0.05); border-radius:50%;"></div>
       <div style="position:absolute; bottom:-30px; left:-30px; width:160px; height:160px; background:rgba(0,229,160,0.03); border-radius:50%;"></div>
-      <div style="font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px;">Eiere varslet av Glemmekassen</div>
-      <div id="counter-number" style="font-family:'Syne',sans-serif; font-size:88px; font-weight:800; color:var(--accent); line-height:0.9; margin-bottom:14px; text-shadow: 0 0 40px rgba(0,229,160,0.3);">1</div>
-      <div style="width:40px; height:2px; background:rgba(0,229,160,0.3); margin: 0 auto 14px; border-radius:2px;"></div>
-      <div style="font-size:13px; color:rgba(255,255,255,0.45); line-height:1.5;">Glemmekassen er under utprøving<br>— takk for at du hjelper! 🙌</div>
+
+      <!-- Global counter -->
+      <div style="font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px;">Totalt varslet av Glemmekassen</div>
+      <div id="counter-number" style="font-family:'Syne',sans-serif; font-size:80px; font-weight:800; color:var(--accent); line-height:0.9; margin-bottom:8px; text-shadow: 0 0 40px rgba(0,229,160,0.3);">1</div>
+      <div style="width:40px; height:2px; background:rgba(0,229,160,0.2); margin: 0 auto 16px; border-radius:2px;"></div>
+
+      <!-- Personal counter -->
+      <div style="background: rgba(255,255,255,0.05); border-radius: 14px; padding: 12px 16px; display:inline-flex; align-items:center; gap:10px;">
+        <span style="font-size:18px;">🏅</span>
+        <div style="text-align:left;">
+          <div style="font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase;">Du har scannet</div>
+          <div style="font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:var(--text);" id="personal-counter">1 gjenstand</div>
+        </div>
+      </div>
+
+      <!-- Milestone message -->
+      <div id="milestone-msg" style="display:none; margin-top:14px; background: rgba(0,229,160,0.12); border-radius:12px; padding:10px 14px; font-size:13px; color:var(--accent); font-weight:600;"></div>
     </div>
 
-    <!-- Feedback card -->
-    <div style="margin: 0 16px 16px; background: var(--surface2); border-radius: 20px; padding: 20px;">
-      <div style="font-size:12px; font-weight:600; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px;">Kom tingen hjem?</div>
-      <div style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:14px;">Vi elsker å høre når det går bra! Gi oss gjerne en tilbakemelding.</div>
-      <a href="sms:95276157" style="display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:14px; padding:14px 16px; margin-bottom:8px; text-decoration:none; border: 1px solid rgba(255,255,255,0.05);">
-        <span style="width:36px; height:36px; background:rgba(0,229,160,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">📱</span>
-        <div>
-          <div style="font-size:12px; color:var(--muted); margin-bottom:2px;">Send SMS</div>
-          <div style="color:var(--accent); font-size:14px; font-weight:600;">95276157</div>
+    <!-- Vipps card -->
+    <div style="margin: 0 16px 16px; background: var(--surface2); border-radius: 20px; padding: 18px 20px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="width:44px; height:44px; background:rgba(255,106,0,0.15); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">🧡</div>
+        <div style="flex:1;">
+          <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:2px;">Liker du Glemmekassen?</div>
+          <div style="font-size:12px; color:var(--muted); line-height:1.5;">Støtt tjenesten med 10 kr – det hjelper!</div>
         </div>
-      </a>
-      <a id="feedback-email" style="display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:14px; padding:14px 16px; text-decoration:none; cursor:pointer; border: 1px solid rgba(255,255,255,0.05);" onclick="window.location='mai'+'lto:'+'heidi.thaulow'+'@'+'gmail.com'">
-        <span style="width:36px; height:36px; background:rgba(0,229,160,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">✉️</span>
-        <div>
-          <div style="font-size:12px; color:var(--muted); margin-bottom:2px;">Send e-post</div>
-          <div style="color:var(--accent); font-size:14px; font-weight:600;">heidi.thaulow&#64;gmail.com</div>
-        </div>
-      </a>
+      </div>
+      <a href="vipps://payment?recipient=95276157&amount=1000&message=Glemmekassen" style="display:block; margin-top:14px; background: linear-gradient(135deg, #ff6400, #ff8c00); color:white; text-align:center; padding:13px; border-radius:12px; font-size:14px; font-weight:700; text-decoration:none; letter-spacing:0.3px;">Vipps 10 kr til Glemmekassen v/Heidi Thaulow 🧡</a>
     </div>
 
     <!-- Save to homescreen -->
@@ -820,9 +825,9 @@
       </div>
     </div>
 
-    <!-- Next action -->
+    <!-- Next action – stor primærknapp -->
     <div style="padding: 0 16px 40px;">
-      <button class="new-report-btn" onclick="resetApp()" style="width:100%; padding:18px; font-size:16px; font-weight:700; border-radius:16px;">🎽 Hjelp neste eier</button>
+      <button class="new-report-btn" onclick="resetApp()" style="width:100%; padding:20px; font-size:18px; font-weight:800; border-radius:16px; background: linear-gradient(135deg, var(--accent), #00c87a); color:#0a1628; border:none; cursor:pointer; letter-spacing:0.3px; box-shadow: 0 4px 20px rgba(0,229,160,0.3);">🎽 Scan neste gjenstand</button>
     </div>
 
   </div>
@@ -1450,7 +1455,38 @@ function showSuccess(demo) {
     : `SMS sendt til ${formatPhone(state.phone)} ✓`;
 
   incrementCounter();
+  updatePersonalCounter();
   showHomescreenCard();
+}
+
+function updatePersonalCounter() {
+  const key = 'glemmekassen_personal_count';
+  const current = parseInt(localStorage.getItem(key) || '0') + 1;
+  localStorage.setItem(key, current);
+
+  const el = document.getElementById('personal-counter');
+  const word = current === 1 ? 'gjenstand' : 'gjenstander';
+  el.textContent = `${current} ${word}`;
+
+  // Milepæl-animasjon basert på personlig teller
+  const milestones = {
+    1:  '🎉 Første gjenstand scannet!',
+    5:  '⭐ 5 gjenstander – du er på vei!',
+    10: '🔥 10 gjenstander – imponerende!',
+    25: '🏆 25 gjenstander – superscanner!',
+    50: '🌟 50 gjenstander – legende!',
+    100:'🚀 100 gjenstander – utrolig!'
+  };
+
+  if (milestones[current]) {
+    const msg = document.getElementById('milestone-msg');
+    msg.textContent = milestones[current];
+    msg.style.display = 'block';
+    // Bounce animation på ikon
+    const icon = document.getElementById('success-icon');
+    icon.style.transform = 'scale(1.3)';
+    setTimeout(() => { icon.style.transform = 'scale(1)'; }, 400);
+  }
 }
 
 async function incrementCounter() {
@@ -1618,7 +1654,7 @@ function triggerInstall() {
 <div style="margin: 0 16px 40px; padding: 20px 24px; background: rgba(255,255,255,0.04); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06);">
   <div style="font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #7a8aaa; margin-bottom: 12px;">🔒 Personvern</div>
   <p style="font-size: 12px; color: #7a8aaa; line-height: 1.7; margin: 0;">
-    Glemmekassen bruker telefonnummeret som er sydd inn i gjenstanden <em>utelukkende</em> for å sende én SMS til eieren om at gjenstanden er funnet. Nummeret lagres ikke i klartekst – kun en anonymisert hash beholdes for statistikk. Bilde og funnsted lagres i opptil 365 dager. Ingen data deles med tredjepart. Tjenesten drives av Heidi Thaulow –
+    Glemmekassen bruker telefonnummeret som er sydd inn i gjenstanden for å varsle eieren om at gjenstanden er funnet. Nummeret lagres ikke i klartekst – kun en anonymisert hash beholdes for statistikk. Bilde og funnsted lagres i opptil 365 dager. Ingen data deles med tredjepart. Tjenesten drives av Heidi Thaulow –
     <a href="mailto:heidi.thaulow@gmail.com" style="color: #00e5a0; text-decoration: none;">heidi.thaulow@gmail.com</a>.
   </p>
 </div>
