@@ -1455,30 +1455,26 @@ function showSuccess(demo) {
 
 async function incrementCounter() {
   try {
-    // Hent nåværende teller
-    const getRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_counter`, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/claude-proxy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
       },
-      body: JSON.stringify({})
+      body: JSON.stringify({ action: 'increment_counter' })
     });
-    if (getRes.ok) {
-      const val = await getRes.json();
-      animateCounter(typeof val === 'number' ? val : 1);
-    } else {
-      // Fallback: tell lokalt i session
-      const current = parseInt(sessionStorage.getItem('glemmekassen_count') || '0') + 1;
-      sessionStorage.setItem('glemmekassen_count', current);
-      animateCounter(current);
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof data.count === 'number') {
+        animateCounter(data.count);
+        return;
+      }
     }
-  } catch(e) {
-    const current = parseInt(sessionStorage.getItem('glemmekassen_count') || '0') + 1;
-    sessionStorage.setItem('glemmekassen_count', current);
-    animateCounter(current);
-  }
+  } catch(e) {}
+  // Fallback: tell lokalt
+  const current = parseInt(sessionStorage.getItem('glemmekassen_count') || '0') + 1;
+  sessionStorage.setItem('glemmekassen_count', current);
+  animateCounter(current);
 }
 
 function animateCounter(target) {
@@ -1538,6 +1534,20 @@ function shareApp() {
     navigator.share({ title: 'Glemmekassen', text: 'Scan gjenglemt utstyr og varsle eieren automatisk!', url });
   } else {
     navigator.clipboard.writeText(url).then(() => showToast('📋 Lenke kopiert!', 'success'));
+  }
+}
+
+// ── Homescreen card ───────────────────────────────────
+function showHomescreenCard() {
+  const card = document.getElementById('homescreen-card');
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  const isAndroidInstalled = window.matchMedia('(display-mode: standalone)').matches;
+  if (!isStandalone && !isAndroidInstalled) {
+    card.style.display = 'block';
+    if (isIOS) {
+      document.getElementById('homescreen-btn').textContent = 'Se hvordan du gjør det';
+    }
   }
 }
 
@@ -1603,16 +1613,3 @@ function triggerInstall() {
   }
 }
 
-function showHomescreenCard() {
-  const card = document.getElementById('homescreen-card');
-  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone;
-  const isAndroidInstalled = window.matchMedia('(display-mode: standalone)').matches;
-  // Only show if not already installed
-  if (!isStandalone && !isAndroidInstalled) {
-    card.style.display = 'block';
-    if (isIOS) {
-      document.getElementById('homescreen-btn').textContent = 'Se hvordan du gjør det';
-    }
-  }
-}
