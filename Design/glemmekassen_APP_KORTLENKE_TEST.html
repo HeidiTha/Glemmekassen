@@ -988,7 +988,7 @@ body::before,body::after { display:none; }
     </div>
     <div id="item-type-manual" style="display:none">
       <div class="field"><label for="item-type">Type gjenstand</label>
-        <select id="item-type" onchange="syncItemChip()">
+        <select id="item-type" onchange="itemTypeChosenByUser=true;syncItemChip()">
           <option value="">Velg type...</option>
           <option value="jakke">🧥 Jakke</option><option value="genser">👕 Genser/topp</option>
           <option value="bukse">👖 Bukse</option><option value="sko">👟 Sko</option>
@@ -1140,7 +1140,10 @@ function refreshLocationForNewScan() {
   autoStartGPS();
 }
 
+// Når brukeren selv har valgt type, skal ikke bildegjenkjenningen (som kan komme senere) overstyre valget
+let itemTypeChosenByUser=false;
 function selectItemChip(type) {
+  itemTypeChosenByUser=true;
   document.getElementById('item-type').value=type;
   syncItemChip();
   document.getElementById('item-type-detected').style.display='none';
@@ -1152,6 +1155,7 @@ function syncItemChip() {
 function retakeItemPhoto() {
   state.itemPhotoDataUrl=null;
   state.itemColor='';
+  itemTypeChosenByUser=false;
   document.getElementById('item-canvas').style.display='none';
   document.getElementById('item-retake-btn').style.display='none';
   document.getElementById('item-type-detected').style.display='none';
@@ -1628,7 +1632,10 @@ async function recognizeItem(dataUrl) {
     const parsed = JSON.parse(clean);
 
     const validTypes = ['jakke', 'genser', 'bukse', 'sko', 'sekk', 'lue/skjerf', 'sportsutstyr', 'annet'];
-    if (parsed.type && validTypes.includes(parsed.type)) {
+    if (itemTypeChosenByUser) {
+      // Brukeren valgte type mens gjenkjenningen pågikk – behold valget, bruk bare fargen
+      state.itemColor = parsed.color || '';
+    } else if (parsed.type && validTypes.includes(parsed.type)) {
       document.getElementById('item-type').value = parsed.type;
       const label = document.getElementById('item-type').options[document.getElementById('item-type').selectedIndex].text;
       const emoji = label.split(' ')[0];
@@ -1653,6 +1660,7 @@ async function recognizeItem(dataUrl) {
 function handleItemFileCapture(event) {
   const file = event.target.files[0];
   if (!file) return;
+  itemTypeChosenByUser = false;
   const reader = new FileReader();
   reader.onload = async (e) => {
     state.itemPhotoDataUrl = e.target.result;
@@ -1956,6 +1964,7 @@ function resetApp() {
   document.getElementById('item-type-detected').style.display = 'none';
   document.getElementById('item-type-manual').style.display = 'none';
   document.getElementById('item-type').value = '';
+  itemTypeChosenByUser = false;
   document.getElementById('phone-hint').textContent = '';
   document.getElementById('canvas').style.display = 'none';
   document.getElementById('cam-placeholder').style.display = 'flex';
