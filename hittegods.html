@@ -1365,8 +1365,7 @@ async function uploadBilde(dataUrl) {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'image/jpeg',
-        'x-upsert': 'true'
+        'Content-Type': 'image/jpeg'
       },
       body: blob
     });
