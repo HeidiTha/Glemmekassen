@@ -1,5 +1,6 @@
 const CACHE = 'glemmekassen-v3';
-const ASSETS = ['/Glemmekassen/', '/Glemmekassen/hittegods.html'];
+// Relative stier, så det virker både på heiditha.github.io/Glemmekassen og glemmekassen.com
+const ASSETS = ['./', './hittegods.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(

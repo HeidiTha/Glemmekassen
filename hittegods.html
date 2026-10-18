@@ -1597,7 +1597,7 @@ if ('serviceWorker' in navigator) {
   caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
   // Registrer fersk
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/Glemmekassen/sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
 

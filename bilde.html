@@ -390,8 +390,11 @@
   const lat       = p.get('lat');
   const lng       = p.get('lng');
 
+  // Vis bare bilder fra Glemmekassens egen lagring (hindrer at noen lager lenker med fremmede bilder)
+  const BILDE_PREFIX = 'https://jyajkriknplrhsxustpf.supabase.co/storage/v1/object/public/bilder/';
+
   // Show image
-  if (bildeUrl) {
+  if (bildeUrl && bildeUrl.startsWith(BILDE_PREFIX)) {
     const wrap = document.getElementById('item-img-wrap');
     const img = document.createElement('img');
     img.src = decodeURIComponent(bildeUrl);
@@ -417,10 +420,18 @@
   }
 
   // Update map link if GPS available
-  if (lat && lng) {
-    const mapUrl = `https://maps.google.com/?q=${lat},${lng}`;
-    document.getElementById('meta-sted').innerHTML =
-      `<a href="${mapUrl}" style="color:var(--green);text-decoration:none">${decodeURIComponent(sted || 'Vis på kart')} 🗺️</a>`;
+  // Bygges med textContent i stedet for innerHTML, så innhold fra lenken aldri kan kjøres som kode
+  const latNum = parseFloat(lat);
+  const lngNum = parseFloat(lng);
+  if (isFinite(latNum) && isFinite(lngNum)) {
+    const a = document.createElement('a');
+    a.href = `https://maps.google.com/?q=${latNum},${lngNum}`;
+    a.style.color = 'var(--green)';
+    a.style.textDecoration = 'none';
+    a.textContent = `${sted || 'Vis på kart'} 🗺️`;
+    const metaSted = document.getElementById('meta-sted');
+    metaSted.textContent = '';
+    metaSted.appendChild(a);
   }
 
   // Install button logic
