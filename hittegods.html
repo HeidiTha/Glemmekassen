@@ -1359,7 +1359,8 @@ async function uploadBilde(dataUrl) {
   if (!dataUrl) return null;
   try {
     const blob = await (await fetch(dataUrl)).blob();
-    const filename = `bilde_${Date.now()}.jpg`;
+    // Tilfeldig navn, så ingen kan gjette seg til andres bilder
+    const filename = `bilde_${crypto.randomUUID()}.jpg`;
     const res = await fetch(`${SUPABASE_URL}/storage/v1/object/bilder/${filename}`, {
       method: 'POST',
       headers: {
@@ -1597,7 +1598,7 @@ if ('serviceWorker' in navigator) {
   caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
   // Registrer fersk
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/Glemmekassen/sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
 

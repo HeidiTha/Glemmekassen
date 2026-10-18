@@ -23,7 +23,7 @@ itemEl.textContent='Laster...';placeEl.textContent='Laster...';
   const x=data.item;
   const name=String(x.gjenstand||'Annet');itemEl.textContent=name.charAt(0).toLocaleUpperCase('nb-NO')+name.slice(1);
   placeEl.textContent=x.stedsnavn||'Funnsted ikke oppgitt';
-  if(x.bilde_url){const u=new URL(x.bilde_url);if(u.protocol==='https:'){const img=document.createElement('img');img.src=u.href;img.alt='Bilde av gjenstanden';img.onerror=()=>img.replaceWith(document.createTextNode('Bildet kunne ikke lastes inn'));document.getElementById('photo').replaceChildren(img);}}
+  if(x.bilde_url){const u=new URL(x.bilde_url);if(u.href.startsWith('https://jyajkriknplrhsxustpf.supabase.co/storage/v1/object/public/bilder/')){const img=document.createElement('img');img.src=u.href;img.alt='Bilde av gjenstanden';img.onerror=()=>img.replaceWith(document.createTextNode('Bildet kunne ikke lastes inn'));document.getElementById('photo').replaceChildren(img);}}
   const lat=Number(x.lat),lng=Number(x.lng);
   if(x.lat!=null&&x.lng!=null&&Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180){const map=document.getElementById('map');map.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(lat+','+lng);map.removeAttribute('aria-disabled');}
  }catch(err){itemEl.textContent='Kunne ikke laste gjenstanden';placeEl.textContent=err.message||'Prøv igjen senere.';}

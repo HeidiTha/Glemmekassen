@@ -2,7 +2,7 @@
   "name": "Glemmekassen",
   "short_name": "Glemmekassen",
   "description": "Varsle eiere av glemte gjenstander på sekunder",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#0a1628",
   "theme_color": "#0a1628",

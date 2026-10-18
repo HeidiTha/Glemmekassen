@@ -15,7 +15,7 @@ const value=k=>(p.get(k)||'').trim();
 const item=value('gjenstand');document.getElementById('item').textContent=item ? item.charAt(0).toLocaleUpperCase('nb-NO')+item.slice(1) : 'Gjenstand';
 document.getElementById('footer-logo').src=document.getElementById('brand-logo').src;
 const place=value('sted');document.getElementById('place').textContent=place||'Funnsted ikke oppgitt';
-const image=value('bilde');if(image){try{const u=new URL(image);if(u.protocol==='https:'){const img=document.createElement('img');img.src=u.href;img.alt='Bilde av gjenstanden';img.onerror=()=>img.replaceWith(document.createTextNode('Bildet kunne ikke lastes inn'));const photo=document.getElementById('photo');photo.replaceChildren(img)}}catch(e){}}
+const image=value('bilde');if(image){try{const u=new URL(image);if(u.href.startsWith('https://jyajkriknplrhsxustpf.supabase.co/storage/v1/object/public/bilder/')){const img=document.createElement('img');img.src=u.href;img.alt='Bilde av gjenstanden';img.onerror=()=>img.replaceWith(document.createTextNode('Bildet kunne ikke lastes inn'));const photo=document.getElementById('photo');photo.replaceChildren(img)}}catch(e){}}
 const lat=Number(value('lat')),lng=Number(value('lng'));
 if(value('lat')&&value('lng')&&Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180){const map=document.getElementById('map');map.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(lat+','+lng);map.removeAttribute('aria-disabled')}
 document.getElementById('send-greeting').addEventListener('click',()=>{
