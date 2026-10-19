@@ -13,6 +13,29 @@ const APP_LINK = "https://heiditha.github.io/Glemmekassen/hittegods.html";
 const BILDE_PREFIX = "https://jyajkriknplrhsxustpf.supabase.co/storage/v1/object/public/bilder/";
 const ITEM_TYPES = ["jakke", "genser", "bukse", "sko", "sekk", "lue/skjerf", "sportsutstyr", "vannflaske", "annet"];
 
+// Sikkerhetsnett: maks antall SMS totalt per døgn (alle brukere til sammen)
+const MAX_SMS_PER_DAY = 100;
+// Bilder og funn slettes automatisk etter så mange dager (se personvernteksten i hittegods.html)
+const KEEP_DAYS = 365;
+
+// Sletter bilder og funn eldre enn KEEP_DAYS. Kjøres etter hver sendte SMS,
+// så det trengs ingen egen tidsplan. Feil her skal aldri stoppe en SMS.
+async function cleanupOld(url: string, h: Record<string, string>) {
+  try {
+    const cutoff = new Date(Date.now() - KEEP_DAYS * 86400000).toISOString();
+    await fetch(`${url}/rest/v1/${TABLE}?created_at=lt.${cutoff}`, { method: "DELETE", headers: h });
+    const list = await fetch(`${url}/storage/v1/object/list/bilder`, {
+      method: "POST", headers: h,
+      body: JSON.stringify({ prefix: "", limit: 100, sortBy: { column: "created_at", order: "asc" } }),
+    });
+    const old = ((await list.json()) as { name: string; created_at: string }[])
+      .filter((o) => o.created_at && o.created_at < cutoff).map((o) => o.name);
+    if (old.length) {
+      await fetch(`${url}/storage/v1/object/bilder`, { method: "DELETE", headers: h, body: JSON.stringify({ prefixes: old }) });
+    }
+  } catch (_) { /* prøver igjen neste gang */ }
+}
+
 // Kort, ren tekst: ingen linjeskift, lenker eller nettadresser
 function clean(value: unknown, max: number): string {
   return String(value ?? "")
@@ -64,11 +87,20 @@ Deno.serve(async (req) => {
     const body = await req.json();
     if (body.action !== "sms") return json({ error: "Ugyldig handling" }, 400);
 
-    // Enkel grense per IP (en bedre, global grense kommer)
+    // Grense per IP (nullstilles når funksjonen starter på nytt, derfor også et tak under)
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
     const now = Date.now(), recent = (hits.get(ip) || []).filter((t) => now - t < 86400000);
     if (recent.filter((t) => now - t < 60000).length >= 5 || recent.length >= 50) return json({ error: "For mange SMS-forsøk" }, 429);
     recent.push(now); hits.set(ip, recent);
+
+    // Totalt tak per døgn, talt i databasen (hver SMS lagrer ett funn)
+    const since = new Date(now - 86400000).toISOString();
+    const countRes = await fetch(`${url}/rest/v1/${TABLE}?select=id&created_at=gte.${since}`, {
+      method: "HEAD", headers: { ...h, Prefer: "count=exact" },
+    });
+    const sentToday = Number(countRes.headers.get("content-range")?.split("/")[1] ?? NaN);
+    if (!Number.isFinite(sentToday)) return json({ error: "Kunne ikke sjekke SMS-grensen" }, 502);
+    if (sentToday >= MAX_SMS_PER_DAY) return json({ error: "Glemmekassen har nådd dagens SMS-grense. Prøv igjen i morgen." }, 429);
 
     // Bare norske mobilnummer (8 siffer som starter med 4 eller 9)
     const to = String(body.to || "").replace(/\D/g, "").replace(/^(0047|47)(?=\d{8}$)/, "");
@@ -105,6 +137,7 @@ Deno.serve(async (req) => {
     });
     const txt = await sms.text();
     if (!sms.ok || txt.startsWith("+++")) return json({ error: "SMS-feil: " + txt.slice(0, 180) }, 502);
+    await cleanupOld(url, h);
     return json({ ok: true, id });
   } catch (e) {
     return json({ error: String((e as Error).message || e) }, 500);
