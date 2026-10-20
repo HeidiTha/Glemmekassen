@@ -8,8 +8,8 @@ const json = (x: unknown, s = 200) =>
   new Response(JSON.stringify(x), { status: s, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 const TABLE = "glemmekassen_shortlink_test";
-const OWNER_PAGE = "https://heiditha.github.io/Glemmekassen/eier.html?id=";
-const APP_LINK = "https://heiditha.github.io/Glemmekassen/hittegods.html";
+const OWNER_PAGE = "https://glemmekassen.com/eier.html?id=";
+const APP_LINK = "https://glemmekassen.com/hittegods.html";
 const BILDE_PREFIX = "https://jyajkriknplrhsxustpf.supabase.co/storage/v1/object/public/bilder/";
 const ITEM_TYPES = ["jakke", "genser", "bukse", "sko", "sekk", "lue/skjerf", "sportsutstyr", "vannflaske", "annet"];
 
