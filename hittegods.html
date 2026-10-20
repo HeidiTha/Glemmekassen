@@ -1784,7 +1784,7 @@ Fikk du den tilbake? Vipps gjerne 10 kr eller send en hilsen til 952 76 157. Hel
 Hilsen Glemmekassen 💛
 
 Vil du hjelpe andre med å finne det de har mistet? Bruk Glemmekassen neste gang du finner noe!
-https://heiditha.github.io/Glemmekassen/hittegods.html`;
+${new URL("hittegods.html", location.href).href}`;
 }
 
 // ── Send SMS ───────────────────────────────────────────
@@ -1980,7 +1980,7 @@ function resetApp() {
 
 // ── Del app ───────────────────────────────────────────
 function shareApp() {
-  const url = 'https://heiditha.github.io/Glemmekassen/';
+  const url = new URL('./', location.href).href;
   if (navigator.share) {
     navigator.share({ title: 'Glemmekassen', text: 'Scan gjenglemt utstyr og varsle eieren automatisk!', url });
   } else {
