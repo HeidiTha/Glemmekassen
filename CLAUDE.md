@@ -7,9 +7,9 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 
 | Del | Hva | Hvor |
 |---|---|---|
-| Appen | `hittegods.html` (`index.html` sender videre hit) | GitHub Pages, heiditha.github.io/Glemmekassen |
-| Eiersiden | `eier.html?id=…` – lenken i SMS-en | GitHub Pages |
-| Gammel bildeside | `bilde.html` – bare for eldre SMS-lenker | GitHub Pages |
+| Appen | `hittegods.html` (`index.html` sender videre hit) | glemmekassen.com (GitHub Pages, domenet ligger i `CNAME`) |
+| Eiersiden | `eier.html?id=…` – lenken i SMS-en | glemmekassen.com/eier.html |
+| Gammel bildeside | `bilde.html` – bare for eldre SMS-lenker | glemmekassen.com/bilde.html |
 | Bilder | Supabase Storage, bøtta `bilder` | Supabase-prosjekt `jyajkriknplrhsxustpf` |
 | Funn bak eierlenken | tabellen `glemmekassen_shortlink_test` | Supabase |
 | Global teller | tabellen `counter` + funksjonen `increment_counter` | Supabase |
@@ -47,6 +47,6 @@ Test etterpå med eget telefonnummer. Funksjonen må ha `--no-verify-jwt`, eller
 
 ## Teste
 
-- Nettsiden oppdateres ca. ett minutt etter at endringer er lagt på `main` i GitHub.
+- glemmekassen.com oppdateres ca. ett minutt etter at endringer er lagt på `main` i GitHub. (Den gamle adressen heiditha.github.io/Glemmekassen virker fortsatt, men lenkene i SMS-en peker til glemmekassen.com.)
 - Test hele flyten på mobil: skann navnelapp → bilde → sted → send → åpne lenken i SMS-en.
 - Send bare test-SMS til eget nummer.
