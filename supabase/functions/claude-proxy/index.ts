@@ -70,6 +70,8 @@ Deno.serve(async (req) => {
       }),
     });
     const data = await response.json();
+    // Vis feilen fra Anthropic i stedet for et tomt svar (ellers skanner appen i det uendelige)
+    if (!response.ok) return json({ error: `Claude-feil ${response.status}: ${data.error?.message || "ukjent"}` }, 502);
     return json({ text: data.content?.[0]?.text || "" });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
