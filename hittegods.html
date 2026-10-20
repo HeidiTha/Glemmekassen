@@ -565,6 +565,7 @@ body::before,body::after { display:none; }
 #step-0 #capture-btn {display:none!important;}
 #step-0 > div:last-child > div {gap:12px!important;}
 #step-0 > div:last-child > div button {background:#fff!important;color:#203c61!important;border:2px solid #203c61!important;border-radius:17px!important;padding:16px 7px!important;font-size:15px!important;font-weight:750!important;backdrop-filter:none!important;}
+#step-0 > div:last-child > div button.manual-highlight {background:#f0b53f!important;}
 #step-0 .scan-line {animation:scan 1.5s ease-in-out infinite;}
 /* Resten av appen beholder sin opprinnelige stil i denne testen. */
 
@@ -898,7 +899,7 @@ body::before,body::after { display:none; }
   <div class="steps" aria-hidden="true" style="display:none">
     <div class="step-dot active" id="dot-0"></div><div class="step-dot" id="dot-1"></div><div class="step-dot" id="dot-2"></div><div class="step-dot" id="dot-3"></div><div class="step-dot" id="dot-4"></div>
   </div>
-  <div class="scan-intro"><h2>Skann telefonnummeret på merkelappen</h2><p>Hold kameraet over nummeret. Vi leser det automatisk.</p></div>
+  <div class="scan-intro"><h2>Skann telefonnummeret på merkelappen</h2><p>Hold kameraet over nummeret. Vi leser det automatisk. Virker det ikke? Trykk «Skriv inn nummeret selv» nederst.</p></div>
   <!-- STEG 1: Kamera / merkelapp – fullskjerm -->
   <div class="card active" id="step-0" class="scan-screen" style="padding:0; overflow:hidden; border-radius:var(--radius); position:relative; aspect-ratio: 3/4;">
 
@@ -931,28 +932,28 @@ body::before,body::after { display:none; }
       <div style="display:flex; gap:10px; width:100%;">
         <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFileCapture(event)">
         <button onclick="document.getElementById('file-input').click()" style="flex:1; padding:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2); border-radius:10px; color:white; font-size:12px; cursor:pointer; backdrop-filter:blur(10px);">▧ Velg bilde</button>
-        <button onclick="goToStep(1)" style="flex:1; padding:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2); border-radius:10px; color:rgba(255,255,255,0.7); font-size:12px; cursor:pointer; backdrop-filter:blur(10px);">▤ Skriv inn selv</button>
+        <button id="manual-entry-btn" onclick="goToManualEntry()" style="flex:1; padding:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.45); border-radius:10px; color:white; font-weight:700; font-size:13px; cursor:pointer; backdrop-filter:blur(10px);">▤ Skriv inn nummeret selv</button>
       </div>
     </div>
   </div>
 
   <!-- STEG 2: Telefonnummer -->
   <div class="card confirm-screen" id="step-1">
-    <div class="confirm-pill">✓ &nbsp; Vi fant et nummer</div>
-    <h2>Stemmer nummeret?</h2>
+    <div class="confirm-pill" id="confirm-pill">✓ &nbsp; Vi fant et nummer</div>
+    <h2 id="confirm-title">Stemmer nummeret?</h2>
     <p class="confirm-desc">Eieren får en SMS på dette nummeret.</p>
     <div class="confirm-panel">
       <div class="field" id="phone-field">
         <label for="phone-input">Telefonnummer</label>
         <input type="tel" id="phone-input" placeholder="404 51 530" inputmode="tel" autocomplete="off" oninput="liveValidatePhone(this)">
-        <div class="confirm-help">Feil? Trykk på nummeret og rett det.</div>
+        <div class="confirm-help" id="confirm-help">Feil? Trykk på nummeret og rett det.</div>
         <div id="phone-hint" style="font-size:13px; margin-top:8px; min-height:20px;"></div>
       </div>
     </div>
     <button class="confirm-rescan" onclick="goToStep(0); startCamera();"><span aria-hidden="true" style="display:inline-flex;vertical-align:middle;margin-right:7px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a9 9 0 1 1 2.6 6.4"/><path d="M3 4v7h7"/></svg></span><u>Skann på nytt</u></button>
     <div class="nav-row confirm-nav">
       <button class="nav-back" onclick="goToStep(0); startCamera();" aria-label="Tilbake">❮</button>
-      <button class="nav-next" onclick="validatePhone()">Ja, gå videre <span class="confirm-arrow">➜</span></button>
+      <button class="nav-next" id="confirm-next" onclick="validatePhone()">Ja, gå videre <span class="confirm-arrow">➜</span></button>
     </div>
   </div>
 
@@ -1237,6 +1238,43 @@ async function autoStartCamera() {
 // Ingen endring i OCR, SMS eller de andre stegene.
 let liveScanTimer = null;
 let liveScanBusy = false;
+// ── Skrive inn nummeret selv ───────────────────────────
+// Fallback for dem som ikke får skanningen til å virke.
+function setPhoneScreenMode(mode) {
+  const titles = { found: 'Stemmer nummeret?', uncertain: 'Sjekk nummeret', manual: 'Skriv inn telefonnummeret' };
+  const helps = {
+    found: 'Feil? Trykk på nummeret og rett det.',
+    uncertain: 'Vi er ikke sikre – rett det hvis det er feil. Åtte siffer, uten +47.',
+    manual: 'Åtte siffer, uten +47. Står nummeret på navnelappen, skriv det av.'
+  };
+  document.getElementById('confirm-pill').style.display = mode === 'found' ? 'inline-flex' : 'none';
+  document.getElementById('confirm-title').textContent = titles[mode] || titles.found;
+  document.getElementById('confirm-help').textContent = helps[mode] || helps.found;
+  const next = document.getElementById('confirm-next');
+  next.innerHTML = '';
+  next.append(mode === 'found' ? 'Ja, gå videre ' : 'Gå videre ');
+  const arrow = document.createElement('span');
+  arrow.className = 'confirm-arrow';
+  arrow.textContent = '➜';
+  next.append(arrow);
+}
+
+function goToManualEntry() {
+  stopLiveNumberScan();
+  setPhoneScreenMode('manual');
+  goToStep(1);
+  const input = document.getElementById('phone-input');
+  input.value = state.phone || '';
+  liveValidatePhone(input);
+  input.focus();
+}
+
+// Når skanningen gir opp, skal knappen «Skriv inn nummeret selv» være lett å se
+function setManualEntryHighlight(on) {
+  const btn = document.getElementById('manual-entry-btn');
+  if (btn) btn.classList.toggle('manual-highlight', on);
+}
+
 let liveScanSession = 0;
 // Hvert forsøk er et kall til Claude og koster penger, så skanningen stopper etter et visst antall
 const LIVE_SCAN_MAX_TRIES = 10;
@@ -1244,6 +1282,7 @@ const LIVE_SCAN_MAX_TRIES = 10;
 function stopLiveScanWithMessage(text) {
   stopLiveNumberScan();
   document.getElementById('scan-status').textContent = text;
+  setManualEntryHighlight(true);
 }
 
 function stopLiveNumberScan() {
@@ -1254,6 +1293,7 @@ function stopLiveNumberScan() {
 
 function startLiveNumberScan() {
   stopLiveNumberScan();
+  setManualEntryHighlight(false);
   const session = liveScanSession;
   let tries = 0;
   document.getElementById('scan-status').textContent = 'Ser etter nummeret ...';
@@ -1281,6 +1321,7 @@ function startLiveNumberScan() {
           state.phone = digits;
           document.getElementById('phone-input').value = digits;
           liveValidatePhone(document.getElementById('phone-input'));
+          setPhoneScreenMode('found');
           goToStep(1);
           showToast('Fant nummer – kontroller at det stemmer', 'success');
           return;
@@ -1498,7 +1539,6 @@ async function runOCR(dataUrl) {
       if (match) parsed.phone = match[0];
     }
 
-    goToStep(1);
     const input = document.getElementById('phone-input');
     if (parsed.phone) {
       // Strip leading country code: +47, 0047, 47 if followed by 8 digits
@@ -1506,6 +1546,8 @@ async function runOCR(dataUrl) {
       if (digits.length === 10 && digits.startsWith('47')) digits = digits.slice(2);
       if (digits.length === 12 && digits.startsWith('0047')) digits = digits.slice(4);
       const valid = digits.length === 8 && /^[49]/.test(digits);
+      setPhoneScreenMode(valid ? 'found' : 'uncertain');
+      goToStep(1);
       input.value = digits;
       liveValidatePhone(input);
       if (valid) {
@@ -1513,13 +1555,15 @@ async function runOCR(dataUrl) {
         showToast('✅ Fant nummer – sjekk at det stemmer', 'success');
       } else {
         showToast('⚠️ Usikkert nummer – vennligst sjekk', 'error');
+        input.focus();
       }
     } else {
-      showToast('Fant ikke nummer – skriv inn manuelt', 'error');
+      goToManualEntry();
+      showToast('Fant ikke nummeret – skriv det inn selv', 'error');
     }
   } catch(e) {
     showToast(`OCR-feil: ${e.message}`, 'error');
-    goToStep(1);
+    goToManualEntry();
   }
 }
 
@@ -1971,6 +2015,8 @@ function resetApp() {
   document.getElementById('item-type').value = '';
   itemTypeChosenByUser = false;
   document.getElementById('phone-hint').textContent = '';
+  setPhoneScreenMode('found');
+  setManualEntryHighlight(false);
   document.getElementById('canvas').style.display = 'none';
   document.getElementById('cam-placeholder').style.display = 'flex';
   document.getElementById('capture-btn').style.display = 'none';
