@@ -916,7 +916,7 @@ body::before,body::after { display:none; }
         <div style="position:absolute; bottom:-2px; left:-2px; width:20px; height:20px; border-bottom:3px solid white; border-left:3px solid white; border-radius:0 0 0 2px;"></div>
         <div style="position:absolute; bottom:-2px; right:-2px; width:20px; height:20px; border-bottom:3px solid white; border-right:3px solid white; border-radius:0 0 2px 0;"></div>
       </div>
-      <div style="margin-top:16px; font-size:13px; color:rgba(255,255,255,0.8); text-align:center; position:relative;">Ser etter nummeret ...</div>
+      <div style="margin-top:16px; font-size:13px; color:rgba(255,255,255,0.8); text-align:center; position:relative;" id="scan-status">Ser etter nummeret ...</div>
     </div>
 
     <!-- No camera fallback -->
@@ -1238,6 +1238,13 @@ async function autoStartCamera() {
 let liveScanTimer = null;
 let liveScanBusy = false;
 let liveScanSession = 0;
+// Hvert forsøk er et kall til Claude og koster penger, så skanningen stopper etter et visst antall
+const LIVE_SCAN_MAX_TRIES = 10;
+
+function stopLiveScanWithMessage(text) {
+  stopLiveNumberScan();
+  document.getElementById('scan-status').textContent = text;
+}
 
 function stopLiveNumberScan() {
   liveScanSession++;
@@ -1248,11 +1255,14 @@ function stopLiveNumberScan() {
 function startLiveNumberScan() {
   stopLiveNumberScan();
   const session = liveScanSession;
+  let tries = 0;
+  document.getElementById('scan-status').textContent = 'Ser etter nummeret ...';
   async function scanFrame() {
     if (session !== liveScanSession || currentStep !== 0 || !state.cameraOpen) return;
     const video = document.getElementById('video');
     if (!liveScanBusy && video.readyState >= 2 && video.videoWidth > 0) {
       liveScanBusy = true;
+      tries++;
       try {
         const frame = document.createElement('canvas');
         const scale = Math.min(1, 1280 / video.videoWidth);
@@ -1276,8 +1286,17 @@ function startLiveNumberScan() {
           return;
         }
       } catch(e) {
-        // Midlertidig nettverks-/OCR-feil: prøv igjen, behold manuell knapp.
+        // Feil fra serveren (f.eks. tom kreditt eller dagens grense): ikke fortsett å prøve
+        if (session === liveScanSession) {
+          stopLiveScanWithMessage('Automatisk lesing virker ikke akkurat nå. Ta bilde med 📸 eller skriv inn nummeret.');
+          showToast(e.message, 'error');
+        }
+        return;
       } finally { liveScanBusy = false; }
+      if (tries >= LIVE_SCAN_MAX_TRIES) {
+        stopLiveScanWithMessage('Fant ikke nummeret automatisk. Ta bilde med 📸 eller skriv inn nummeret.');
+        return;
+      }
     }
     if (session === liveScanSession && currentStep === 0 && state.cameraOpen) {
       liveScanTimer = setTimeout(scanFrame, 2600);

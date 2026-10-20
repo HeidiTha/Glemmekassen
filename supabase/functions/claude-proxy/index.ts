@@ -22,6 +22,9 @@ const PROMPTS: Record<string, string> = {
 };
 const MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_BASE64 = 8_000_000; // ca. 6 MB bilde
+// Sikkerhetsnett for kostnad: maks antall kall til Claude per døgn (alle brukere til sammen).
+// Live-skanning bruker opptil 10 kall per gjenstand.
+const MAX_AI_CALLS_PER_DAY = 500;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
@@ -53,6 +56,19 @@ Deno.serve(async (req) => {
 
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!anthropicKey) return json({ error: "API-nøkkel ikke konfigurert" }, 500);
+
+    // Tell kallet i databasen og stopp ved dagens grense (tabellen ai_bruk, se supabase/sql)
+    const dbUrl = Deno.env.get("APP_URL"), dbKey = Deno.env.get("APP_SERVICE_KEY");
+    if (!dbUrl || !dbKey) return json({ error: "Database ikke konfigurert" }, 500);
+    const quota = await fetch(`${dbUrl}/rest/v1/rpc/registrer_ai_kall`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": dbKey, "Authorization": `Bearer ${dbKey}` },
+      body: JSON.stringify({ maks: MAX_AI_CALLS_PER_DAY }),
+    });
+    if (!quota.ok) return json({ error: "Kunne ikke sjekke dagens grense" }, 503);
+    if ((await quota.json()) !== true) {
+      return json({ error: "Dagens grense for automatisk lesing er nådd. Skriv inn nummeret selv." }, 429);
+    }
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

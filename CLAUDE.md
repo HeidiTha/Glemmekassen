@@ -29,6 +29,9 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 ## Grenser og opprydding
 
 - Maks 100 SMS totalt per døgn (`MAX_SMS_PER_DAY`), og maks 5 per minutt / 50 per døgn per IP.
+- Maks 500 kall til Claude totalt per døgn (`MAX_AI_CALLS_PER_DAY` i `claude-proxy`), talt i tabellen `ai_bruk` (se `supabase/sql/ai-dagsgrense.sql`).
+- Live-skanningen gir opp etter 10 forsøk (`LIVE_SCAN_MAX_TRIES` i `hittegods.html`) og stopper med en gang hvis serveren svarer med feil. Hvert forsøk koster penger.
+- Hvis lesing av nummer slutter å virke: sjekk først kreditten på console.anthropic.com (Plans & Billing).
 - Bilder og funn slettes automatisk etter 365 dager (`KEEP_DAYS`). Oppryddingen kjøres hver gang en SMS sendes.
 - Bare norske mobilnummer (8 siffer, starter med 4 eller 9).
 
