@@ -18,7 +18,7 @@ const PROMPTS: Record<string, string> = {
   ocr:
     'This is a photo of a name tag or clothing label. Extract the phone number. It may include a +47 or 47 country code prefix — include it as-is. Return ONLY JSON: {"phone": "91234567", "name": "Ola"} — digits and optional +47 prefix only, name only if clearly visible. If no number found: {"phone": "", "name": ""}. No other text.',
   item:
-    'This is a lost & found item. What type and color is it? Return ONLY a JSON object: {"type": "jakke", "color": "rød"} — type must be one of: jakke, genser, bukse, sko, sekk, lue/skjerf, sportsutstyr, annet. Color: short Norwegian description e.g. rød, mørkeblå, svart/hvit. No other text.',
+    'This is a lost & found item. What type and color is it? Return ONLY a JSON object: {"type": "jakke", "color": "rød"} — type must be one of: jakke, genser, bukse, sko, sekk, lue/skjerf, sportsutstyr, vannflaske, annet. Use vannflaske for any drinking bottle or water bottle. Color: short Norwegian description e.g. rød, mørkeblå, svart/hvit. No other text.',
 };
 const MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_BASE64 = 8_000_000; // ca. 6 MB bilde
