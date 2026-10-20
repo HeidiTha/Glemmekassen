@@ -74,8 +74,12 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        // Haiku er den minste og billigste modellen – godt nok til å lese et nummer eller en farge.
+        // Tenking er slått av og innsatsen satt lav, siden oppgavene er korte og enkle.
+        model: "claude-haiku-5-5",
         max_tokens: 200,
+        thinking: { type: "disabled" },
+        output_config: { effort: "low" },
         messages: [{
           role: "user",
           content: [
@@ -88,7 +92,8 @@ Deno.serve(async (req) => {
     const data = await response.json();
     // Vis feilen fra Anthropic i stedet for et tomt svar (ellers skanner appen i det uendelige)
     if (!response.ok) return json({ error: `Claude-feil ${response.status}: ${data.error?.message || "ukjent"}` }, 502);
-    return json({ text: data.content?.[0]?.text || "" });
+    const textBlock = (data.content || []).find((b: { type: string }) => b.type === "text");
+    return json({ text: textBlock?.text || "" });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
   }

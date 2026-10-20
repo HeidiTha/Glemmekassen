@@ -21,7 +21,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 1. **Aldri nøkler eller passord i HTML-filene.** Alt i HTML er offentlig. Hemmeligheter (Sveve, Anthropic, service-nøkkel) ligger bare som *secrets* i Supabase. Den eneste nøkkelen i HTML er Supabase sin offentlige `anon`-nøkkel, og den er laget for å være offentlig.
 2. **Ikke lag kopier av sider** (`hittegods (2).html`, `..._TEST.html`, `backup/`). Alt som ligger i repoet er en offentlig side. Endre `hittegods.html` direkte – GitHub tar vare på alle gamle versjoner.
 3. **SMS-teksten bestemmes på serveren**, i `smsText()` i `supabase/functions/glemmekassen-sms/index.ts`. `buildSmsText()` i `hittegods.html` er bare forhåndsvisningen – endre begge hvis teksten skal endres.
-4. **Instruksjonene til Claude ligger på serveren**, i `PROMPTS` i `supabase/functions/claude-proxy/index.ts`. Appen sender bare navnet på oppgaven (`ocr`, `live_ocr`, `item`). Nye oppgaver må legges til der.
+4. **Instruksjonene til Claude ligger på serveren**, i `PROMPTS` i `supabase/functions/claude-proxy/index.ts`. Appen sender bare navnet på oppgaven (`ocr`, `live_ocr`, `item`). Nye oppgaver må legges til der. Modellen er Claude Haiku 5.5 (`claude-haiku-5-5`) – den billigste, og god nok til å lese nummer og farge.
 5. **Tekst fra brukere eller lenker settes inn med `textContent`, aldri `innerHTML`.**
 6. **Bilder lastes opp uten `x-upsert`** og med tilfeldig navn (`crypto.randomUUID()`). Bøtta tillater ikke listing.
 7. **Ikke lagre telefonnummeret** – heller ikke som «hash». Personvernteksten nederst i `hittegods.html` må stemme med det koden faktisk gjør.
