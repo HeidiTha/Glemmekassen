@@ -45,8 +45,33 @@ supabase functions deploy glemmekassen-sms --project-ref jyajkriknplrhsxustpf --
 
 Test etterpå med eget telefonnummer. Funksjonen må ha `--no-verify-jwt`, ellers slutter appen å virke.
 
+## Slik jobber vi sammen
+
+`main` er beskyttet: alle endringer går via en egen gren og en pull request. Du kan slå sammen din egen – ingen andre trenger å godkjenne.
+
+**I GitHub, uten utviklerverktøy:**
+
+1. Åpne filen og trykk blyanten («Edit this file»).
+2. Gjør endringen og trykk «Commit changes».
+3. Velg «Create a new branch for this commit and start a pull request», og trykk «Propose changes».
+4. Se over diffen: grønt er lagt til, rødt er slettet.
+5. Trykk «Merge pull request». Siden oppdateres ca. ett minutt etterpå.
+
+**Bruk aldri «Add files via upload» med en fil du lastet ned tidligere.** Den bytter ut hele filen, så alt andre har endret i mellomtiden blir borte – uten at GitHub advarer. Blyanten redigerer alltid versjonen som ligger der nå, og sier fra hvis noen andre har endret filen imens.
+
+**Se alltid over diffen før du slår sammen.** Mange slettede linjer du ikke kjenner igjen betyr som regel at en gammel versjon er på vei inn. Da er det bedre å stoppe og spørre.
+
+**Fra maskinen:**
+
+```bash
+git switch -c kort-navn-på-endringen
+git commit -am "Hva du endret"
+git push -u origin HEAD
+gh pr create --fill && gh pr merge --merge
+```
+
 ## Teste
 
-- glemmekassen.com oppdateres ca. ett minutt etter at endringer er lagt på `main` i GitHub. (Den gamle adressen heiditha.github.io/Glemmekassen virker fortsatt, men lenkene i SMS-en peker til glemmekassen.com.)
+- glemmekassen.com oppdateres ca. ett minutt etter at endringer er slått sammen til `main` i GitHub. (Den gamle adressen heiditha.github.io/Glemmekassen virker fortsatt, men lenkene i SMS-en peker til glemmekassen.com.)
 - Test hele flyten på mobil: skann navnelapp → bilde → sted → send → åpne lenken i SMS-en.
 - Send bare test-SMS til eget nummer.
