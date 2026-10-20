@@ -565,7 +565,12 @@ body::before,body::after { display:none; }
 #step-0 #capture-btn {display:none!important;}
 #step-0 > div:last-child > div {gap:12px!important;}
 #step-0 > div:last-child > div button {background:#fff!important;color:#203c61!important;border:2px solid #203c61!important;border-radius:17px!important;padding:16px 7px!important;font-size:15px!important;font-weight:750!important;backdrop-filter:none!important;}
-#step-0 > div:last-child > div button.manual-highlight {background:#f0b53f!important;}
+/* Kamerakortet skal ikke bli så høyt at knappene under havner utenfor skjermen */
+#step-0 {aspect-ratio:auto!important;height:min(470px,calc(100dvh - 440px))!important;}
+.scan-actions {display:flex;gap:12px;margin:14px 20px 0;}
+.scan-actions #manual-entry-btn {flex:1.4;}
+.scan-actions button {flex:1;font-family:inherit;background:#fff;color:#203c61;border:2px solid #203c61;border-radius:17px;padding:15px 8px;min-height:58px;font-size:15px;font-weight:750;cursor:pointer;}
+.scan-actions button.manual-highlight {background:#f0b53f;}
 #step-0 .scan-line {animation:scan 1.5s ease-in-out infinite;}
 /* Resten av appen beholder sin opprinnelige stil i denne testen. */
 
@@ -899,7 +904,7 @@ body::before,body::after { display:none; }
   <div class="steps" aria-hidden="true" style="display:none">
     <div class="step-dot active" id="dot-0"></div><div class="step-dot" id="dot-1"></div><div class="step-dot" id="dot-2"></div><div class="step-dot" id="dot-3"></div><div class="step-dot" id="dot-4"></div>
   </div>
-  <div class="scan-intro"><h2>Skann telefonnummeret på merkelappen</h2><p>Hold kameraet over nummeret. Vi leser det automatisk. Virker det ikke? Trykk «Skriv inn nummeret selv» nederst.</p></div>
+  <div class="scan-intro"><h2>Skann telefonnummeret på merkelappen</h2><p>Hold kameraet over nummeret. Vi leser det automatisk – eller skriv det inn selv med knappen under.</p></div>
   <!-- STEG 1: Kamera / merkelapp – fullskjerm -->
   <div class="card active" id="step-0" class="scan-screen" style="padding:0; overflow:hidden; border-radius:var(--radius); position:relative; aspect-ratio: 3/4;">
 
@@ -929,12 +934,14 @@ body::before,body::after { display:none; }
     <!-- Bottom controls -->
     <div style="position:absolute; bottom:0; left:0; right:0; padding:20px 20px 24px; display:flex; flex-direction:column; gap:10px; align-items:center;">
       <button id="capture-btn" onclick="capturePhoto()" style="width:72px; height:72px; border-radius:50%; background:white; border:4px solid rgba(255,255,255,0.4); display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,0.3);">📸</button>
-      <div style="display:flex; gap:10px; width:100%;">
-        <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFileCapture(event)">
-        <button onclick="document.getElementById('file-input').click()" style="flex:1; padding:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2); border-radius:10px; color:white; font-size:12px; cursor:pointer; backdrop-filter:blur(10px);">▧ Velg bilde</button>
-        <button id="manual-entry-btn" onclick="goToManualEntry()" style="flex:1; padding:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.45); border-radius:10px; color:white; font-weight:700; font-size:13px; cursor:pointer; backdrop-filter:blur(10px);">▤ Skriv inn nummeret selv</button>
-      </div>
     </div>
+  </div>
+
+  <!-- Knappene ligger utenfor kamerakortet: kortet klipper alt som stikker utenfor kanten -->
+  <div class="scan-actions" id="scan-actions">
+    <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFileCapture(event)">
+    <button type="button" id="manual-entry-btn" onclick="goToManualEntry()">✎&nbsp; Skriv inn nummeret selv</button>
+    <button type="button" onclick="document.getElementById('file-input').click()">▧&nbsp; Velg bilde</button>
   </div>
 
   <!-- STEG 2: Telefonnummer -->
@@ -1329,13 +1336,13 @@ function startLiveNumberScan() {
       } catch(e) {
         // Feil fra serveren (f.eks. tom kreditt eller dagens grense): ikke fortsett å prøve
         if (session === liveScanSession) {
-          stopLiveScanWithMessage('Automatisk lesing virker ikke akkurat nå. Ta bilde med 📸 eller skriv inn nummeret.');
+          stopLiveScanWithMessage('Automatisk lesing virker ikke akkurat nå. Skriv inn nummeret selv under.');
           showToast(e.message, 'error');
         }
         return;
       } finally { liveScanBusy = false; }
       if (tries >= LIVE_SCAN_MAX_TRIES) {
-        stopLiveScanWithMessage('Fant ikke nummeret automatisk. Ta bilde med 📸 eller skriv inn nummeret.');
+        stopLiveScanWithMessage('Fant ikke nummeret automatisk. Skriv inn nummeret selv under.');
         return;
       }
     }
@@ -1404,6 +1411,7 @@ function goToStep(n) {
     el.textContent = i < activeIndex ? '✓' : String(i+1);
   });
   document.querySelector('.scan-intro').style.display = n === 0 ? 'block' : 'none';
+  document.getElementById('scan-actions').style.display = n === 0 ? 'flex' : 'none';
   currentStep = n;
   document.getElementById(`step-${currentStep}`).classList.add('active');
 
@@ -2039,6 +2047,8 @@ function resetApp() {
     if (i === 0) d.classList.add('active');
   });
   document.getElementById('step-0').classList.add('active');
+  document.querySelector('.scan-intro').style.display = 'block';
+  document.getElementById('scan-actions').style.display = 'flex';
   refreshLocationForNewScan();
   autoStartCamera();
 }
