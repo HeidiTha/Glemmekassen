@@ -562,13 +562,21 @@ body::before,body::after { display:none; }
 #step-0 .scan-line {background:#f0b53f!important;height:3px!important;left:10%!important;right:10%!important;}
 #step-0 #scan-overlay > div:last-child {background:#f5f0e6;border-radius:40px;color:#203c61!important;padding:11px 18px;font-size:15px!important;font-weight:700;margin-top:22px!important;}
 #step-0 > div:last-child {bottom:-95px!important;padding:0!important;gap:0!important;}
-#step-0 #capture-btn {display:none!important;}
+/* Kameraknappen nederst i kamerabildet */
+#step-0 .shutter {position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:3;display:none;flex-direction:column;align-items:center;gap:8px;background:none;border:0;padding:0;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#step-0 .shutter-circle {width:84px;height:84px;border-radius:50%;background:#fff;border:5px solid #f0b53f;box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transition:transform .1s;}
+#step-0 .shutter:active .shutter-circle {transform:scale(.92);}
+#step-0 .shutter:focus-visible .shutter-circle {outline:3px solid #fff;outline-offset:3px;}
+#step-0 .shutter-label {background:rgba(32,60,97,.88);color:#fff;font-size:14px;font-weight:750;padding:6px 13px;border-radius:20px;white-space:nowrap;}
+@media(max-height:760px){#step-0 .shutter{bottom:10px;gap:6px;}#step-0 .shutter-circle{width:68px;height:68px;border-width:4px;}#step-0 .shutter-circle svg{width:34px;height:34px;}#step-0 .shutter-label{font-size:13px;padding:5px 11px;}}
 #step-0 > div:last-child > div {gap:12px!important;}
 #step-0 > div:last-child > div button {background:#fff!important;color:#203c61!important;border:2px solid #203c61!important;border-radius:17px!important;padding:16px 7px!important;font-size:15px!important;font-weight:750!important;backdrop-filter:none!important;}
 /* Kamerakortet skal ikke bli så høyt at knappene under havner utenfor skjermen */
 #step-0 {aspect-ratio:auto!important;height:min(470px,calc(100dvh - 440px))!important;}
 .scan-actions {display:flex;gap:12px;margin:14px 20px 0;}
-.scan-actions #manual-entry-btn {flex:1.4;}
+.scan-actions button {display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;}
+.scan-actions button svg {flex-shrink:0;}
+@media(max-width:380px){.scan-actions button {font-size:14px!important;white-space:normal;}}
 .scan-actions button {flex:1;font-family:inherit;background:#fff;color:#203c61;border:2px solid #203c61;border-radius:17px;padding:15px 8px;min-height:58px;font-size:15px;font-weight:750;cursor:pointer;}
 .scan-actions button.manual-highlight {background:#f0b53f;}
 #step-0 .scan-line {animation:scan 1.5s ease-in-out infinite;}
@@ -908,26 +916,15 @@ body::before,body::after { display:none; }
   <div class="steps" aria-hidden="true" style="display:none">
     <div class="step-dot active" id="dot-0"></div><div class="step-dot" id="dot-1"></div><div class="step-dot" id="dot-2"></div><div class="step-dot" id="dot-3"></div><div class="step-dot" id="dot-4"></div>
   </div>
-  <div class="scan-intro"><h2>Skann telefonnummeret på merkelappen</h2><p>Hold kameraet over nummeret. Vi leser det automatisk – eller skriv det inn selv med knappen under.</p></div>
+  <div class="scan-intro"><h2>Ta bilde av telefonnummeret</h2><p>Hold kameraet over navnelappen og trykk på kameraknappen.</p></div>
   <!-- STEG 1: Kamera / merkelapp – fullskjerm -->
   <div class="card active" id="step-0" class="scan-screen" style="padding:0; overflow:hidden; border-radius:var(--radius); position:relative; aspect-ratio: 3/4;">
 
     <video id="video" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; display:block; border-radius:var(--radius);"></video>
     <canvas id="canvas" style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:var(--radius);"></canvas>
 
-    <!-- Scan frame overlay -->
-    <div id="scan-overlay" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none;">
-      <div style="position:absolute; inset:0; background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.5) 100%);"></div>
-      <div id="scan-frame-box" style="width:80%; aspect-ratio:3/1; border:2px solid var(--accent); border-radius:10px; position:relative; box-shadow: 0 0 0 2000px rgba(0,0,0,0.35);">
-        <div class="scan-line"></div>
-        <!-- Corner decorations -->
-        <div style="position:absolute; top:-2px; left:-2px; width:20px; height:20px; border-top:3px solid white; border-left:3px solid white; border-radius:2px 0 0 0;"></div>
-        <div style="position:absolute; top:-2px; right:-2px; width:20px; height:20px; border-top:3px solid white; border-right:3px solid white; border-radius:0 2px 0 0;"></div>
-        <div style="position:absolute; bottom:-2px; left:-2px; width:20px; height:20px; border-bottom:3px solid white; border-left:3px solid white; border-radius:0 0 0 2px;"></div>
-        <div style="position:absolute; bottom:-2px; right:-2px; width:20px; height:20px; border-bottom:3px solid white; border-right:3px solid white; border-radius:0 0 2px 0;"></div>
-      </div>
-      <div style="margin-top:16px; font-size:13px; color:rgba(255,255,255,0.8); text-align:center; position:relative;" id="scan-status">Ser etter nummeret ...</div>
-    </div>
+    <!-- Ingen ramme eller skannestrek: nummeret leses først når man trykker på kameraknappen -->
+    <div id="scan-overlay" style="position:absolute; inset:0; pointer-events:none;"></div>
 
     <!-- No camera fallback -->
     <div id="cam-placeholder" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center; flex-direction:column; gap:12px; background:var(--surface2);">
@@ -935,17 +932,18 @@ body::before,body::after { display:none; }
       <div style="font-size:14px; color:var(--muted); text-align:center; padding:0 24px;">Kamera ikke tilgjengelig – last opp bilde fra galleri</div>
     </div>
 
-    <!-- Bottom controls -->
-    <div style="position:absolute; bottom:0; left:0; right:0; padding:20px 20px 24px; display:flex; flex-direction:column; gap:10px; align-items:center;">
-      <button id="capture-btn" onclick="capturePhoto()" style="width:72px; height:72px; border-radius:50%; background:white; border:4px solid rgba(255,255,255,0.4); display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,0.3);">📸</button>
-    </div>
+    <!-- Kameraknappen: ett trykk = ett bilde = ett kall til Claude -->
+    <button type="button" id="capture-btn" class="shutter" onclick="capturePhoto()" aria-label="Ta bilde av telefonnummeret">
+      <span class="shutter-circle" aria-hidden="true"><svg width="42" height="42" viewBox="0 0 24 24"><path fill="#203c61" d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="4.2" fill="#fff"/><circle cx="12" cy="13" r="2.5" fill="#203c61"/></svg></span>
+      <span class="shutter-label">Trykk for å ta bilde</span>
+    </button>
   </div>
 
   <!-- Knappene ligger utenfor kamerakortet: kortet klipper alt som stikker utenfor kanten -->
   <div class="scan-actions" id="scan-actions">
     <input type="file" id="file-input" accept="image/*" onchange="handleFileCapture(event)">
-    <button type="button" id="manual-entry-btn" onclick="goToManualEntry()">✎&nbsp; Skriv inn nummeret selv</button>
-    <button type="button" onclick="document.getElementById('file-input').click()">▧&nbsp; Velg bilde</button>
+    <button type="button" id="manual-entry-btn" onclick="goToManualEntry()"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Skriv inn nummeret</button>
+    <button type="button" onclick="document.getElementById('file-input').click()"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Last opp bilde</button>
   </div>
 
   <!-- STEG 2: Telefonnummer -->
@@ -1243,7 +1241,6 @@ async function autoStartCamera() {
     video.srcObject = stream;
     video.style.display = 'block';
     video.play().catch(() => {});
-    startLiveNumberScan();
     document.getElementById('cam-placeholder').style.display = 'none';
     document.getElementById('scan-overlay').classList.add('visible');
     document.getElementById('capture-btn').style.display = 'flex';
@@ -1253,12 +1250,8 @@ async function autoStartCamera() {
   }
 }
 
-// Automatisk skanning: les enkeltbilder fra det levende kameraet.
-// Ingen endring i OCR, SMS eller de andre stegene.
-let liveScanTimer = null;
-let liveScanBusy = false;
 // ── Skrive inn nummeret selv ───────────────────────────
-// Fallback for dem som ikke får skanningen til å virke.
+// For dem som ikke vil eller kan ta bilde av navnelappen.
 function setPhoneScreenMode(mode) {
   const titles = { found: 'Stemmer nummeret?', uncertain: 'Sjekk nummeret', manual: 'Skriv inn telefonnummeret' };
   const helps = {
@@ -1279,7 +1272,6 @@ function setPhoneScreenMode(mode) {
 }
 
 function goToManualEntry() {
-  stopLiveNumberScan();
   setPhoneScreenMode('manual');
   goToStep(1);
   const input = document.getElementById('phone-input');
@@ -1288,81 +1280,10 @@ function goToManualEntry() {
   input.focus();
 }
 
-// Når skanningen gir opp, skal knappen «Skriv inn nummeret selv» være lett å se
+// Fremhever knappen «Skriv inn nummeret» (brukes ikke nå, men nullstilles i resetApp)
 function setManualEntryHighlight(on) {
   const btn = document.getElementById('manual-entry-btn');
   if (btn) btn.classList.toggle('manual-highlight', on);
-}
-
-let liveScanSession = 0;
-// Hvert forsøk er et kall til Claude og koster penger, så skanningen stopper etter et visst antall
-const LIVE_SCAN_MAX_TRIES = 10;
-
-function stopLiveScanWithMessage(text) {
-  stopLiveNumberScan();
-  document.getElementById('scan-status').textContent = text;
-  setManualEntryHighlight(true);
-}
-
-function stopLiveNumberScan() {
-  liveScanSession++;
-  if (liveScanTimer) clearTimeout(liveScanTimer);
-  liveScanTimer = null;
-}
-
-function startLiveNumberScan() {
-  stopLiveNumberScan();
-  setManualEntryHighlight(false);
-  const session = liveScanSession;
-  let tries = 0;
-  document.getElementById('scan-status').textContent = 'Ser etter nummeret ...';
-  async function scanFrame() {
-    if (session !== liveScanSession || currentStep !== 0 || !state.cameraOpen) return;
-    const video = document.getElementById('video');
-    if (!liveScanBusy && video.readyState >= 2 && video.videoWidth > 0) {
-      liveScanBusy = true;
-      tries++;
-      try {
-        const frame = document.createElement('canvas');
-        const scale = Math.min(1, 1280 / video.videoWidth);
-        frame.width = Math.round(video.videoWidth * scale);
-        frame.height = Math.round(video.videoHeight * scale);
-        frame.getContext('2d').drawImage(video, 0, 0, frame.width, frame.height);
-        const result = await callClaude(frame.toDataURL('image/jpeg', 0.82),
-          'live_ocr');
-        if (session !== liveScanSession || currentStep !== 0) return;
-        let raw = '';
-        try { raw = JSON.parse(result.replace(/```json|```/g, '').trim()).phone || ''; }
-        catch(e) { raw = ''; }
-        const digits = normalizeNorwegian(String(raw));
-        if (digits.length === 8 && /^[49]/.test(digits)) {
-          stopLiveNumberScan();
-          state.phone = digits;
-          document.getElementById('phone-input').value = digits;
-          liveValidatePhone(document.getElementById('phone-input'));
-          setPhoneScreenMode('found');
-          goToStep(1);
-          showToast('Fant nummer – kontroller at det stemmer', 'success');
-          return;
-        }
-      } catch(e) {
-        // Feil fra serveren (f.eks. tom kreditt eller dagens grense): ikke fortsett å prøve
-        if (session === liveScanSession) {
-          stopLiveScanWithMessage('Automatisk lesing virker ikke akkurat nå. Skriv inn nummeret selv under.');
-          showToast(e.message, 'error');
-        }
-        return;
-      } finally { liveScanBusy = false; }
-      if (tries >= LIVE_SCAN_MAX_TRIES) {
-        stopLiveScanWithMessage('Fant ikke nummeret automatisk. Skriv inn nummeret selv under.');
-        return;
-      }
-    }
-    if (session === liveScanSession && currentStep === 0 && state.cameraOpen) {
-      liveScanTimer = setTimeout(scanFrame, 2600);
-    }
-  }
-  liveScanTimer = setTimeout(scanFrame, 1200);
 }
 
 function autoStartGPS() {
@@ -1427,7 +1348,6 @@ function goToStep(n) {
 
   // Stop merkelapp-kamera når vi forlater steg 0
   if (n !== 0 && state.stream) stopCamera();
-  if (n === 0 && state.cameraOpen) startLiveNumberScan();
 
   // Auto-start gjenstandskamera på steg 2
   if (n === 2) { syncItemNextButton(); setTimeout(() => autoStartItemCamera(), 400); }
@@ -1458,6 +1378,9 @@ async function startCamera() {
     const video = document.getElementById('video');
     video.srcObject = stream;
     video.style.display = 'block';
+    video.play().catch(() => {});
+    // Skjul et eventuelt gammelt bilde når man kommer tilbake for å ta et nytt
+    document.getElementById('canvas').style.display = 'none';
     document.getElementById('cam-placeholder').style.display = 'none';
     document.getElementById('scan-overlay').classList.add('visible');
     document.getElementById('capture-btn').style.display = 'flex';
@@ -1468,7 +1391,6 @@ async function startCamera() {
 }
 
 function stopCamera() {
-  stopLiveNumberScan();
   if (state.stream) {
     state.stream.getTracks().forEach(t => t.stop());
     state.stream = null;
@@ -1476,14 +1398,20 @@ function stopCamera() {
   }
 }
 
+// Tar ett bilde når man trykker på kameraknappen, og sender det til Claude én gang
 async function capturePhoto() {
-  stopLiveNumberScan();
   const video = document.getElementById('video');
+  if (!state.cameraOpen || !video.videoWidth) {
+    showToast('Kameraet starter – prøv igjen om et øyeblikk', '');
+    return;
+  }
   const canvas = document.getElementById('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-  state.photoDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  // Mindre bilde = raskere opplasting og lesing. 1600 px er nok til å lese nummeret.
+  const scale = Math.min(1, 1600 / video.videoWidth);
+  canvas.width = Math.round(video.videoWidth * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+  state.photoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
   stopCamera();
 
   // Show captured image
@@ -1496,7 +1424,6 @@ async function capturePhoto() {
 }
 
 async function handleFileCapture(event) {
-  stopLiveNumberScan();
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();

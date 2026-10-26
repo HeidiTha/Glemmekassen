@@ -1,6 +1,6 @@
 # Glemmekassen – regler for den som endrer koden
 
-Glemmekassen er en mobil nettside: den som finner en gjenglemt gjenstand skanner telefonnummeret på navnelappen, og eieren får en SMS med bilde og kart.
+Glemmekassen er en mobil nettside: den som finner en gjenglemt gjenstand tar bilde av telefonnummeret på navnelappen, og eieren får en SMS med bilde og kart.
 Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold alt enkelt, og forklar endringer på vanlig norsk.
 
 ## Slik henger det sammen
@@ -21,7 +21,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 1. **Aldri nøkler eller passord i HTML-filene.** Alt i HTML er offentlig. Hemmeligheter (Sveve, Anthropic, service-nøkkel) ligger bare som *secrets* i Supabase. Den eneste nøkkelen i HTML er Supabase sin offentlige `anon`-nøkkel, og den er laget for å være offentlig.
 2. **Ikke lag kopier av sider** (`hittegods (2).html`, `..._TEST.html`, `backup/`). Alt som ligger i repoet er en offentlig side. Endre `hittegods.html` direkte – GitHub tar vare på alle gamle versjoner.
 3. **SMS-teksten bestemmes på serveren**, i `smsText()` i `supabase/functions/glemmekassen-sms/index.ts`. `buildSmsText()` i `hittegods.html` er bare forhåndsvisningen – endre begge hvis teksten skal endres.
-4. **Instruksjonene til Claude ligger på serveren**, i `PROMPTS` i `supabase/functions/claude-proxy/index.ts`. Appen sender bare navnet på oppgaven (`ocr`, `live_ocr`, `item`). Nye oppgaver må legges til der. Modellen er Claude Haiku 5.5 (`claude-haiku-5-5`) – den billigste, og god nok til å lese nummer og farge.
+4. **Instruksjonene til Claude ligger på serveren**, i `PROMPTS` i `supabase/functions/claude-proxy/index.ts`. Appen sender bare navnet på oppgaven (`ocr`, `item`). `live_ocr` ligger fortsatt på serveren, men appen bruker den ikke lenger. Nye oppgaver må legges til der. Modellen er Claude Haiku 5.5 (`claude-haiku-5-5`) – den billigste, og god nok til å lese nummer og farge.
 5. **Tekst fra brukere eller lenker settes inn med `textContent`, aldri `innerHTML`.**
 6. **Bilder lastes opp uten `x-upsert`** og med tilfeldig navn (`crypto.randomUUID()`). Bøtta tillater ikke listing.
 7. **Ikke lagre telefonnummeret** – heller ikke som «hash». Personvernteksten nederst i `hittegods.html` må stemme med det koden faktisk gjør.
@@ -30,7 +30,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 
 - Maks 100 SMS totalt per døgn (`MAX_SMS_PER_DAY`), og maks 5 per minutt / 50 per døgn per IP.
 - Maks 500 kall til Claude totalt per døgn (`MAX_AI_CALLS_PER_DAY` i `claude-proxy`), talt i tabellen `ai_bruk` (se `supabase/sql/ai-dagsgrense.sql`).
-- Live-skanningen gir opp etter 10 forsøk (`LIVE_SCAN_MAX_TRIES` i `hittegods.html`) og stopper med en gang hvis serveren svarer med feil. Hvert forsøk koster penger.
+- Nummeret leses bare når brukeren trykker på kameraknappen (`capturePhoto()` i `hittegods.html`): ett bilde = ett kall til Claude. Ingen automatisk skanning – hvert kall koster penger.
 - Hvis lesing av nummer slutter å virke: sjekk først kreditten på console.anthropic.com (Plans & Billing).
 - Bilder og funn slettes automatisk etter 365 dager (`KEEP_DAYS`). Oppryddingen kjøres hver gang en SMS sendes.
 - Bare norske mobilnummer (8 siffer, starter med 4 eller 9).
@@ -73,5 +73,5 @@ gh pr create --fill && gh pr merge --merge
 ## Teste
 
 - glemmekassen.com oppdateres ca. ett minutt etter at endringer er slått sammen til `main` i GitHub. (Den gamle adressen heiditha.github.io/Glemmekassen virker fortsatt, men lenkene i SMS-en peker til glemmekassen.com.)
-- Test hele flyten på mobil: skann navnelapp → bilde → sted → send → åpne lenken i SMS-en.
+- Test hele flyten på mobil: ta bilde av navnelapp → bilde → sted → send → åpne lenken i SMS-en.
 - Send bare test-SMS til eget nummer.
