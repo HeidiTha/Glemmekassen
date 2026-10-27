@@ -561,24 +561,24 @@ body::before,body::after { display:none; }
 #step-0 #scan-frame-box > div:not(.scan-line) {border-color:#f0b53f!important;width:24px!important;height:24px!important;border-width:5px!important;}
 #step-0 .scan-line {background:#f0b53f!important;height:3px!important;left:10%!important;right:10%!important;}
 #step-0 #scan-overlay > div:last-child {background:#f5f0e6;border-radius:40px;color:#203c61!important;padding:11px 18px;font-size:15px!important;font-weight:700;margin-top:22px!important;}
-#step-0 > div:last-child {bottom:-95px!important;padding:0!important;gap:0!important;}
 /* Kameraknappen nederst i kamerabildet */
-#step-0 .shutter {position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:3;display:none;flex-direction:column;align-items:center;gap:8px;background:none;border:0;padding:0;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-#step-0 .shutter-circle {width:84px;height:84px;border-radius:50%;background:#fff;border:5px solid #f0b53f;box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transition:transform .1s;}
-#step-0 .shutter:active .shutter-circle {transform:scale(.92);}
-#step-0 .shutter:focus-visible .shutter-circle {outline:3px solid #fff;outline-offset:3px;}
-#step-0 .shutter-label {background:rgba(32,60,97,.88);color:#fff;font-size:14px;font-weight:750;padding:6px 13px;border-radius:20px;white-space:nowrap;}
-@media(max-height:760px){#step-0 .shutter{bottom:10px;gap:6px;}#step-0 .shutter-circle{width:68px;height:68px;border-width:4px;}#step-0 .shutter-circle svg{width:34px;height:34px;}#step-0 .shutter-label{font-size:13px;padding:5px 11px;}}
-#step-0 > div:last-child > div {gap:12px!important;}
-#step-0 > div:last-child > div button {background:#fff!important;color:#203c61!important;border:2px solid #203c61!important;border-radius:17px!important;padding:16px 7px!important;font-size:15px!important;font-weight:750!important;backdrop-filter:none!important;}
+.scan-actions .shutter {display:none;flex-direction:column;align-items:center;gap:8px;background:none;border:0;padding:0;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.scan-actions .shutter-circle {width:84px;height:84px;border-radius:50%;background:#fff;border:5px solid #f0b53f;box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transition:transform .1s;}
+.scan-actions .shutter:active .shutter-circle {transform:scale(.92);}
+.scan-actions .shutter:focus-visible .shutter-circle {outline:3px solid #203c61;outline-offset:3px;}
+.scan-actions .shutter-label {color:#203c61;font-size:15px;font-weight:750;white-space:nowrap;}
+@media(max-height:740px){.scan-intro{margin-bottom:12px;}.scan-intro p{margin-top:6px;}.scan-actions{gap:8px;margin-top:12px;}.scan-actions .shutter{gap:5px;}.scan-actions .shutter-circle{width:70px;height:70px;border-width:4px;}.scan-actions .shutter-circle svg{width:34px;height:34px;}.scan-alt button{min-height:48px;padding:9px 6px;}}
 /* Kamerakortet skal ikke bli så høyt at knappene under havner utenfor skjermen */
-#step-0 {aspect-ratio:auto!important;height:min(470px,calc(100dvh - 440px))!important;}
-.scan-actions {display:flex;gap:12px;margin:14px 20px 0;}
-.scan-actions button {display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;}
-.scan-actions button svg {flex-shrink:0;}
-@media(max-width:380px){.scan-actions button {font-size:14px!important;white-space:normal;}}
-.scan-actions button {flex:1;font-family:inherit;background:#fff;color:#203c61;border:2px solid #203c61;border-radius:17px;padding:15px 8px;min-height:58px;font-size:15px;font-weight:750;cursor:pointer;}
-.scan-actions button.manual-highlight {background:#f0b53f;}
+#step-0 {aspect-ratio:auto!important;height:clamp(170px,calc(100dvh - 530px),430px)!important;}
+.scan-actions {display:flex;flex-direction:column;align-items:center;gap:12px;margin:18px 20px 0;}
+.scan-or {display:none;font-size:14px;color:#6a7f98;font-weight:600;}
+.shutter[style*="flex"] + .scan-or {display:block;}
+.scan-alt {display:flex;gap:10px;width:100%;}
+.scan-alt button {display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;}
+.scan-alt button svg {flex-shrink:0;}
+@media(max-width:380px){.scan-alt button {font-size:14px!important;white-space:normal;}}
+.scan-alt button {flex:1;font-family:inherit;background:#fff;color:#203c61;border:1.5px solid #b9c4d0;border-radius:15px;padding:12px 8px;min-height:52px;font-size:15px;font-weight:700;cursor:pointer;}
+.scan-alt button.manual-highlight {background:#f0b53f;}
 #step-0 .scan-line {animation:scan 1.5s ease-in-out infinite;}
 /* Resten av appen beholder sin opprinnelige stil i denne testen. */
 
@@ -916,7 +916,7 @@ body::before,body::after { display:none; }
   <div class="steps" aria-hidden="true" style="display:none">
     <div class="step-dot active" id="dot-0"></div><div class="step-dot" id="dot-1"></div><div class="step-dot" id="dot-2"></div><div class="step-dot" id="dot-3"></div><div class="step-dot" id="dot-4"></div>
   </div>
-  <div class="scan-intro"><h2>Ta bilde av telefonnummeret</h2><p>Hold kameraet over navnelappen og trykk på kameraknappen.</p></div>
+  <div class="scan-intro"><h2>Ta bilde av merkelappen</h2><p>Hold kameraet over merkelappen med telefonnummeret.</p></div>
   <!-- STEG 1: Kamera / merkelapp – fullskjerm -->
   <div class="card active" id="step-0" class="scan-screen" style="padding:0; overflow:hidden; border-radius:var(--radius); position:relative; aspect-ratio: 3/4;">
 
@@ -932,18 +932,21 @@ body::before,body::after { display:none; }
       <div style="font-size:14px; color:var(--muted); text-align:center; padding:0 24px;">Kamera ikke tilgjengelig – last opp bilde fra galleri</div>
     </div>
 
-    <!-- Kameraknappen: ett trykk = ett bilde = ett kall til Claude -->
-    <button type="button" id="capture-btn" class="shutter" onclick="capturePhoto()" aria-label="Ta bilde av telefonnummeret">
+  </div>
+
+  <!-- Kameraknapp og valg ligger under kamerakortet: kortet klipper alt som stikker utenfor kanten -->
+  <div class="scan-actions" id="scan-actions">
+    <input type="file" id="file-input" accept="image/*" onchange="handleFileCapture(event)">
+    <!-- Kameraknappen ligger under kamerabildet, der tommelen naturlig hviler: ett trykk = ett bilde = ett kall til Claude -->
+    <button type="button" id="capture-btn" class="shutter" onclick="capturePhoto()" aria-label="Ta bilde av merkelappen">
       <span class="shutter-circle" aria-hidden="true"><svg width="42" height="42" viewBox="0 0 24 24"><path fill="#203c61" d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="4.2" fill="#fff"/><circle cx="12" cy="13" r="2.5" fill="#203c61"/></svg></span>
       <span class="shutter-label">Trykk for å ta bilde</span>
     </button>
-  </div>
-
-  <!-- Knappene ligger utenfor kamerakortet: kortet klipper alt som stikker utenfor kanten -->
-  <div class="scan-actions" id="scan-actions">
-    <input type="file" id="file-input" accept="image/*" onchange="handleFileCapture(event)">
-    <button type="button" id="manual-entry-btn" onclick="goToManualEntry()"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Skriv inn nummeret</button>
-    <button type="button" onclick="document.getElementById('file-input').click()"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Last opp bilde</button>
+    <div class="scan-or" aria-hidden="true">eller</div>
+    <div class="scan-alt">
+      <button type="button" id="manual-entry-btn" onclick="goToManualEntry()"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Skriv inn nummeret</button>
+      <button type="button" onclick="document.getElementById('file-input').click()"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Last opp bilde</button>
+    </div>
   </div>
 
   <!-- STEG 2: Telefonnummer -->
