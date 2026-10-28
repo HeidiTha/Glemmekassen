@@ -1138,6 +1138,7 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
       </div>
       <button type="button" class="hjem-tips-knapp" id="hjem-tips-legg-til" hidden>Legg til på hjemskjermen</button>
       <p class="hjem-tips-steg" id="hjem-tips-ios" hidden>Trykk <b>Del</b> <span class="hjem-tips-del" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span> og velg <b>«Legg til på Hjem-skjerm»</b></p>
+      <p class="hjem-tips-steg" id="hjem-tips-android" hidden>Trykk <b>⋮</b> i nettleseren og velg <b>«Installer app»</b> eller <b>«Legg til på startskjermen»</b></p>
       <button type="button" class="hjem-tips-nei" id="hjem-tips-nei">Nei takk</button>
     </div>
     <div class="thanks-bottom">Vil du hjelpe noe hjem?</div>
@@ -2011,12 +2012,15 @@ function visHjemTips(antall) {
   let sagtNei = false;
   try { sagtNei = localStorage.getItem(HJEM_TIPS_KEY) === 'nei'; } catch (e) {}
   const iphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const vis = antall >= 2 && !sagtNei && !erPaaHjemskjermen() && (installDialog || iphone);
+  const mobil = iphone || /Android/i.test(navigator.userAgent);
+  // Vises på alle mobiler. Har telefonen en egen «Installer»-dialog, får man en knapp – ellers stegene.
+  const vis = antall >= 2 && !sagtNei && !erPaaHjemskjermen() && (installDialog || mobil);
   boks.hidden = !vis;
   document.getElementById('success-screen').classList.toggle('med-tips', vis);
   if (!vis) return;
   document.getElementById('hjem-tips-legg-til').hidden = !installDialog;
-  document.getElementById('hjem-tips-ios').hidden = !!installDialog;
+  document.getElementById('hjem-tips-ios').hidden = !!installDialog || !iphone;
+  document.getElementById('hjem-tips-android').hidden = !!installDialog || iphone;
 }
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('hjem-tips-nei').addEventListener('click', () => {
