@@ -1745,7 +1745,7 @@ function goToSummary() {
   state.placeName = document.getElementById('place-input').value.trim();
   state.itemType = document.getElementById('item-type').value;
 
-  const locationStr = [state.placeName, state.locationText || (state.lat ? 'Din posisjon (se kartet)' : '')].filter(Boolean).join(' — ');
+  const locationStr = [state.locationText || (state.lat ? 'Din posisjon (se kartet)' : ''), state.placeName].filter(Boolean).join(' – ');
   if (!adresse && !state.lat) {
     showToast('Skriv adressen eller skolen der du fant det', 'error');
     return;
@@ -1757,7 +1757,10 @@ function goToSummary() {
 
   document.getElementById('sum-phone').textContent = formatPhone(state.phone);
   document.getElementById('sum-location').textContent = locationStr;
-  document.getElementById('sum-item').textContent = itemLabel || 'Ikke spesifisert';
+  // «🧥 Jakke» → «Jakke (blå)»
+  const itemName = itemLabel ? itemLabel.replace(/^[^A-Za-zÆØÅæøå]+/, '') : '';
+  const itemColor = (state.itemColor || '').trim();
+  document.getElementById('sum-item').textContent = itemName ? (itemColor ? `${itemName} (${itemColor})` : itemName) : 'Ikke spesifisert';
 
   // Vis bilde av gjenstand i oppsummering
   if (state.itemPhotoDataUrl) {
@@ -1777,35 +1780,42 @@ function goToSummary() {
   state.specificPlace = state.placeName;
   state.itemPart = itemPart;
 
-  const smsTxt = buildSmsText('[lenke]');
+  const smsTxt = buildSmsText();
   document.getElementById('sms-preview-text').textContent = smsTxt;
   state.smsText = smsTxt;
 
   goToStep(4);
 }
 
-function buildSmsText(bildeUrl, includeVipps = false) {
-  // Bruk alltid ordet «gjenstand» i SMS-en, uavhengig av kategori.
-  // Legg bare til farge når den er kjent.
+// Hvordan hver kategori skrives i SMS-en. MÅ HOLDES LIK SMS_ORD i
+// supabase/functions/glemmekassen-sms/index.ts – det er serveren som sender den ekte SMS-en.
+const SMS_ORD = {
+  'jakke':        { ord: 'en jakke',               din: 'din',  den: 'den' },
+  'genser':       { ord: 'en genser',              din: 'din',  den: 'den' },
+  'bukse':        { ord: 'en bukse',               din: 'din',  den: 'den' },
+  'sko':          { ord: 'et par sko',             din: 'dine', den: 'dem' },
+  'sekk':         { ord: 'en sekk',                din: 'din',  den: 'den' },
+  'lue/skjerf':   { ord: 'en lue eller et skjerf', din: 'din',  den: 'den' },
+  'sportsutstyr': { ord: 'noe sportsutstyr',       din: 'ditt', den: 'det' },
+  'vannflaske':   { ord: 'en vannflaske',          din: 'din',  den: 'den' },
+  'annet':        { ord: 'en gjenstand',           din: 'din',  den: 'den' },
+};
+
+// Bare forhåndsvisning – serveren lager den ekte SMS-en med samme tekst (smsText()).
+// Koden lages først når SMS-en sendes, så her vises en eksempelkode.
+function buildSmsText(kode) {
+  const o = SMS_ORD[state.itemType] || SMS_ORD['annet'];
   const farge = (state.itemColor || '').trim();
-  const gjenstand = farge ? `gjenstand (${farge})` : 'gjenstand';
-  // Bruk faktisk valgt/skrevet sted, ikke en fast «i glemmekassen»-tekst.
-  const sted = (state.locationText || 'et sted i nærheten').trim();
-  const stedMedPreposisjon = /^(på|i|ved|hos)\s/i.test(sted) ? sted : `på ${sted}`;
-  // Bare forhåndsvisning – serveren lager den ekte SMS-en med samme tekst.
-  const lenke = bildeUrl || '[lenke]';
-  return `Hei! Noen fant en ${gjenstand} som kan være din ${stedMedPreposisjon}. 🧤
+  const ting = farge ? `${o.ord} (${farge})` : o.ord;
+  const hvor = (state.locationText || '').trim() || 'et sted i nærheten';
+  const hvorMedPreposisjon = /^(på|i|ved|hos)\s/i.test(hvor) ? hvor : `på ${hvor}`;
+  return `Hei! Noen har funnet ${ting} som kan være ${o.din}, ${hvorMedPreposisjon}.
 
-Se bilde og kart: ${lenke}
+Gå til glemmekassen.com/kode og tast koden ${kode || 'K7M4Q2'} for å se bilde og kart.
 
-Hent den så fort du kan – jo raskere, desto bedre sjanse for at den fortsatt er der!
+Føl deg trygg: Glemmekassen ber aldri om penger, passord eller BankID.
 
-Fikk du den tilbake? Vipps gjerne 10 kr eller send en hilsen til 952 76 157. Helt frivillig.
-
-Hilsen Glemmekassen 💛
-
-Vil du hjelpe andre med å finne det de har mistet? Bruk Glemmekassen neste gang du finner noe!
-${new URL("hittegods.html", location.href).href}`;
+Fikk du ${o.den} igjen? Send en liten hilsen til Glemmekassen på Instagram @glemmekass1`;
 }
 
 // ── Send SMS ───────────────────────────────────────────
@@ -1875,7 +1885,7 @@ async function sendSMS() {
   } catch(e) {
     showToast(`Feil: ${e.message}`, 'error');
     btn.disabled = false;
-    btn.textContent = '💚 Varsle eieren nå';
+    btn.innerHTML = '<span aria-hidden="true">♥</span> Varsle eieren nå';
   }
 }
 
@@ -1990,7 +2000,7 @@ function resetApp() {
   document.getElementById('place-small-label').textContent = 'Din posisjon nå';
   document.getElementById('sum-photo-row').style.display = 'none';
   document.getElementById('send-btn').disabled = false;
-  document.getElementById('send-btn').textContent = '💚 Varsle eieren nå';
+  document.getElementById('send-btn').innerHTML = '<span aria-hidden="true">♥</span> Varsle eieren nå';
 
   currentStep = 0;
   document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
@@ -2098,7 +2108,7 @@ function triggerInstall() {
 <div style="margin: 0 16px 40px; padding: 20px 24px; background: rgba(255,255,255,0.04); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06);">
   <div style="font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #7a8aaa; margin-bottom: 12px;">🔒 Personvern</div>
   <p style="font-size: 12px; color: #7a8aaa; line-height: 1.7; margin: 0;">
-    Glemmekassen bruker telefonnummeret som er sydd inn i gjenstanden for å varsle eieren om at gjenstanden er funnet. Nummeret brukes bare til å sende SMS-en og lagres ikke hos Glemmekassen. Bilde og funnsted lagres i opptil 365 dager og slettes deretter automatisk. For å levere tjenesten sendes bildene til Anthropic (leser nummeret og gjenkjenner gjenstanden), og SMS sendes via Sveve. Tjenesten drives av Heidi Thaulow –
+    Glemmekassen bruker telefonnummeret som er sydd inn i gjenstanden for å varsle eieren om at gjenstanden er funnet. Nummeret brukes bare til å sende SMS-en og lagres ikke hos Glemmekassen. Bilde, gjenstand, farge og funnsted lagres i opptil 365 dager sammen med en kode som eieren får på SMS, og slettes deretter automatisk. Den som har koden kan se funnet og markere det som hentet – da lagres tidspunktet. For å levere tjenesten sendes bildene til Anthropic (leser nummeret og gjenkjenner gjenstanden), og SMS sendes via Sveve. Tjenesten drives av Heidi Thaulow –
     <a href="mailto:heidi.thaulow@gmail.com" style="color: #00e5a0; text-decoration: none;">heidi.thaulow@gmail.com</a>.
   </p>
 </div>
