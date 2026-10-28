@@ -1,6 +1,6 @@
 # Glemmekassen – regler for den som endrer koden
 
-Glemmekassen er en mobil nettside: den som finner en gjenglemt gjenstand tar bilde av telefonnummeret på navnelappen, og eieren får en SMS med bilde og kart.
+Glemmekassen er en mobil nettside: den som finner en gjenglemt gjenstand tar bilde av telefonnummeret på navnelappen, og eieren får en SMS med en kode. Med koden på glemmekassen.com/kode ser eieren bilde og kart.
 Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold alt enkelt, og forklar endringer på vanlig norsk.
 
 ## Slik henger det sammen
@@ -8,10 +8,11 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 | Del | Hva | Hvor |
 |---|---|---|
 | Appen | `hittegods.html` (`index.html` sender videre hit) | glemmekassen.com (GitHub Pages, domenet ligger i `CNAME`) |
-| Eiersiden | `eier.html?id=…` – lenken i SMS-en | glemmekassen.com/eier.html |
+| Kodesiden | `kode/index.html` – eieren taster koden fra SMS-en | glemmekassen.com/kode |
+| Eiersiden | `eier.html?kode=…` (gamle SMS-er: `?id=…`) – funnet, kart, «Jeg har hentet den» og takk | glemmekassen.com/eier.html |
 | Gammel bildeside | `bilde.html` – bare for eldre SMS-lenker | glemmekassen.com/bilde.html |
 | Bilder | Supabase Storage, bøtta `bilder` | Supabase-prosjekt `jyajkriknplrhsxustpf` |
-| Funn bak eierlenken | tabellen `glemmekassen_shortlink_test` | Supabase |
+| Funn bak koden | tabellen `glemmekassen_shortlink_test` (kolonnene `kode`, `farge`, `hentet_at` – se `supabase/sql/kode-og-hentet.sql`) | Supabase |
 | Global teller | tabellen `counter` + funksjonen `increment_counter` | Supabase |
 | SMS | serverfunksjonen `glemmekassen-sms` → Sveve | `supabase/functions/glemmekassen-sms` |
 | Lese nummer / gjenkjenne gjenstand | serverfunksjonen `claude-proxy` → Anthropic | `supabase/functions/claude-proxy` |
@@ -34,6 +35,8 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 - Hvis lesing av nummer slutter å virke: sjekk først kreditten på console.anthropic.com (Plans & Billing).
 - Bilder og funn slettes automatisk etter 365 dager (`KEEP_DAYS`). Oppryddingen kjøres hver gang en SMS sendes.
 - Bare norske mobilnummer (8 siffer, starter med 4 eller 9).
+- Koden er 6 tegn uten 0/O og 1/I/L. Maks 10 feil koder per time per IP (`MAX_FEIL_KODER_PER_TIME`), så ingen kan prøve seg fram til andres funn.
+- SMS-teksten har ingen emoji, og avsendernavnet er `GlemmeKasse` (Sveve tillater maks 11 tegn). Uten emoji får hver SMS-del plass til 153 tegn i stedet for 67, og det blir billigere.
 
 ## Endre en serverfunksjon
 
