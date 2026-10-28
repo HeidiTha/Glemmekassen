@@ -1,5 +1,6 @@
 // Glemmekassen: sender SMS til eieren og lagrer funnet bak en kort kode.
 // POST {action:"sms"}: send SMS.  POST {action:"hentet"}: eieren har hentet tingen.
+// POST {action:"status", ider:[…]}: hvor mange av finnerens funn som er hentet (telleren i appen).
 // GET ?kode=K7M4Q2: hent funnet til eiersiden.  GET ?id=: samme, for gamle SMS-lenker.
 // SMS-teksten lages her på serveren – nettleseren sender bare korte, rensede felter,
 // så ingen kan bruke tjenesten til å sende egne meldinger.
@@ -101,6 +102,9 @@ function registrerFeil(ip: string) {
   feilKoder.set(ip, [...(feilKoder.get(ip) || []), Date.now()]);
 }
 
+// Telleren spør om maks så mange funn om gangen
+const MAX_IDER_STATUS = 300;
+
 const FELTER = "gjenstand,farge,stedsnavn,lat,lng,bilde_url,kode,created_at,hentet_at";
 
 const hits = new Map<string, number[]>();
@@ -160,6 +164,16 @@ Deno.serve(async (req) => {
       }
       return json({ ok: true });
     }
+    // Telleren: appen sender id-ene til funnene den har registrert, og får bare tilbake ett tall.
+    // Id-ene er lange og tilfeldige, så ingen kan gjette seg fram til andres funn.
+    if (body.action === "status") {
+      const ider = (Array.isArray(body.ider) ? body.ider : [])
+        .filter((x: unknown) => typeof x === "string" && /^[0-9a-f-]{36}$/i.test(x)).slice(-MAX_IDER_STATUS);
+      if (!ider.length) return json({ hentet: 0 });
+      const r = await fetch(`${url}/rest/v1/${TABLE}?id=in.(${ider.join(",")})&hentet_at=not.is.null&select=id`, { headers: h });
+      if (!r.ok) return json({ error: "Kunne ikke hente status" }, 502);
+      return json({ hentet: (await r.json()).length });
+    }
     if (body.action !== "sms") return json({ error: "Ugyldig handling" }, 400);
 
     // Grense per IP (nullstilles når funksjonen starter på nytt, derfor også et tak under)
@@ -200,13 +214,13 @@ Deno.serve(async (req) => {
       bilde_url: bildeUrl,
     };
     // Lag en kode som ikke er brukt fra før (prøver på nytt i det sjeldne tilfellet at den finnes)
-    let kode = "";
+    let kode = "", id = "";
     for (let forsok = 0; forsok < 5 && !kode; forsok++) {
       const prov = nyKode();
       const saved = await fetch(`${url}/rest/v1/${TABLE}`, {
-        method: "POST", headers: { ...h, Prefer: "return=minimal" }, body: JSON.stringify({ ...record, kode: prov }),
+        method: "POST", headers: { ...h, Prefer: "return=representation" }, body: JSON.stringify({ ...record, kode: prov }),
       });
-      if (saved.ok) kode = prov;
+      if (saved.ok) { kode = prov; id = (await saved.json())[0]?.id || ""; }
       else if (saved.status !== 409) return json({ error: "Kunne ikke lagre gjenstanden" }, 502);
     }
     if (!kode) return json({ error: "Kunne ikke lage kode" }, 502);
@@ -221,7 +235,8 @@ Deno.serve(async (req) => {
     const txt = await sms.text();
     if (!sms.ok || txt.startsWith("+++")) return json({ error: "SMS-feil: " + txt.slice(0, 180) }, 502);
     await cleanupOld(url, h);
-    return json({ ok: true, kode });
+    // id lagres i finnerens telefon, så telleren kan vise hvor mange som har kommet hjem
+    return json({ ok: true, kode, id });
   } catch (e) {
     return json({ error: String((e as Error).message || e) }, 500);
   }

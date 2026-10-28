@@ -574,6 +574,22 @@ body::before,body::after { display:none; }
 .scan-or {display:none;font-size:14px;color:#6a7f98;font-weight:600;}
 .shutter[style*="flex"] + .scan-or {display:block;}
 .scan-alt {display:flex;gap:10px;width:100%;}
+/* Teller øverst på forsiden */
+.teller-kort {display:flex;align-items:center;gap:12px;margin:0 20px 14px;padding:12px 16px;background:#fff;border-radius:16px;color:#203c61;font-size:clamp(13px,3.75vw,16px);line-height:1.35;}
+#teller-hjem {white-space:nowrap;}
+.teller-kort[hidden] {display:none;}
+.teller-ikon {font-size:24px;line-height:1;}
+.teller-kort b {font-weight:850;}
+/* Når telleren vises, blir kamerabildet litt lavere så knappene fortsatt får plass */
+body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!important;}
+@media(max-height:740px){.teller-kort{padding:8px 14px;margin-bottom:10px;}body.har-teller #step-0{height:clamp(140px,calc(100dvh - 590px),400px)!important;}}
+/* Teller på takkesiden */
+.thanks-teller {width:100%;max-width:360px;margin:0 auto 22px;padding:18px 18px 16px;background:rgba(255,255,255,.12);border-radius:20px;text-align:left;}
+.thanks-teller[hidden] {display:none;}
+.thanks-teller-rad {display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:15px;color:#eef3fb;}
+.thanks-teller-rad strong {color:#f5bd3f;font-size:clamp(30px,9vw,40px);font-weight:850;line-height:1;white-space:nowrap;}
+.thanks-teller-hjem {margin-top:8px;font-size:15px;color:#eef3fb;}
+.thanks-teller:not([hidden]) + .thanks-spacer {flex:0 0 auto;min-height:4px;}
 .scan-alt button {display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;}
 .scan-alt button svg {flex-shrink:0;}
 @media(max-width:380px){.scan-alt button {font-size:14px!important;white-space:normal;}}
@@ -916,6 +932,8 @@ body::before,body::after { display:none; }
   <div class="steps" aria-hidden="true" style="display:none">
     <div class="step-dot active" id="dot-0"></div><div class="step-dot" id="dot-1"></div><div class="step-dot" id="dot-2"></div><div class="step-dot" id="dot-3"></div><div class="step-dot" id="dot-4"></div>
   </div>
+  <!-- Teller: vises når denne telefonen har registrert minst ett funn -->
+  <div class="teller-kort" id="teller" hidden><span class="teller-ikon" aria-hidden="true">🏆</span><span>Du har registrert <b id="teller-antall">0 plagg</b><span id="teller-hjem"></span></span></div>
   <div class="scan-intro"><h2>Ta bilde av merkelappen</h2><p>Hold kameraet over merkelappen med telefonnummeret.</p></div>
   <!-- STEG 1: Kamera / merkelapp – fullskjerm -->
   <div class="card active" id="step-0" class="scan-screen" style="padding:0; overflow:hidden; border-radius:var(--radius); position:relative; aspect-ratio: 3/4;">
@@ -1080,7 +1098,11 @@ body::before,body::after { display:none; }
     <div class="thanks-badge"><span aria-hidden="true">✓</span> SMS er sendt</div>
     <h2 class="thanks-heading">Takk for at du hjelper<br>å få klærne hjem igjen!</h2>
     <p class="thanks-message" id="success-desc">Eieren har fått beskjed og kan hente klærne sine.</p>
-    <div class="thanks-heart" aria-hidden="true">♥</div>
+    <!-- Teller på takkesiden -->
+    <div class="thanks-teller" id="takk-teller" hidden>
+      <div class="thanks-teller-rad"><span>Du har registrert</span><strong id="takk-antall">1 plagg</strong></div>
+      <div class="thanks-teller-hjem" id="takk-hjem"></div>
+    </div>
     <div class="thanks-spacer"></div>
     <button type="button" class="thanks-next" onclick="resetApp()">Fant du flere ting? Skann en til</button>
     <div class="thanks-bottom">Vil du hjelpe noe hjem?</div>
@@ -1222,6 +1244,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   autoStartCamera();
   refreshLocationForNewScan();
+  oppdaterTeller();
 });
 
 async function autoStartCamera() {
@@ -1345,6 +1368,7 @@ function goToStep(n) {
     el.textContent = i < activeIndex ? '✓' : String(i+1);
   });
   document.querySelector('.scan-intro').style.display = n === 0 ? 'block' : 'none';
+  document.getElementById('teller').style.display = n === 0 ? '' : 'none';
   document.getElementById('scan-actions').style.display = n === 0 ? 'flex' : 'none';
   currentStep = n;
   document.getElementById(`step-${currentStep}`).classList.add('active');
@@ -1877,7 +1901,9 @@ async function sendSMS() {
     const data = await res.json();
 
     if (data.ok || data.sid) {
+      lagreFunn(data.id);
       showSuccess(false);
+      oppdaterTeller();
     } else {
       const err = data.error || 'Ukjent feil';
       throw new Error(err);
@@ -1901,75 +1927,60 @@ function showSuccess(demo) {
   // Den gamle teller-/hjemskjermvisningen er fjernet fra takk-skjermen.
 }
 
-function updatePersonalCounter() {
-  const key = 'glemmekassen_personal_count';
-  const current = parseInt(localStorage.getItem(key) || '0') + 1;
-  localStorage.setItem(key, current);
-
-  const el = document.getElementById('personal-counter');
-  const word = current === 1 ? 'gjenstand' : 'gjenstander';
-  el.textContent = `${current} ${word}`;
-
-  // Milepæl-animasjon basert på personlig teller
-  const milestones = {
-    1:  '🎉 Første gjenstand scannet!',
-    5:  '⭐ 5 gjenstander – du er på vei!',
-    10: '🔥 10 gjenstander – imponerende!',
-    25: '🏆 25 gjenstander – superscanner!',
-    50: '🌟 50 gjenstander – legende!',
-    100:'🚀 100 gjenstander – utrolig!'
-  };
-
-  if (milestones[current]) {
-    const msg = document.getElementById('milestone-msg');
-    msg.textContent = milestones[current];
-    msg.style.display = 'block';
-    // Bounce animation på ikon
-    const icon = document.getElementById('success-icon');
-    icon.style.transform = 'scale(1.3)';
-    setTimeout(() => { icon.style.transform = 'scale(1)'; }, 400);
-  }
-}
-
-async function incrementCounter() {
+// ── Teller ─────────────────────────────────────────────
+// Telefonen husker id-ene til funnene den har registrert (ingen telefonnummer).
+// Serveren svarer bare med hvor mange av dem eieren har markert som hentet.
+const FUNN_KEY = 'glemmekassen_mine_funn';
+const HJEM_KEY = 'glemmekassen_mine_hjem';
+function mineFunn() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/claude-proxy`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify({ action: 'increment_counter' })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (typeof data.count === 'number') {
-        animateCounter(data.count);
-        return;
-      }
-    }
-  } catch(e) {}
-  // Fallback: tell lokalt
-  const current = parseInt(sessionStorage.getItem('glemmekassen_count') || '0') + 1;
-  sessionStorage.setItem('glemmekassen_count', current);
-  animateCounter(current);
+    const liste = JSON.parse(localStorage.getItem(FUNN_KEY) || '[]');
+    return Array.isArray(liste) ? liste.filter(x => typeof x === 'string' && /^[0-9a-f-]{36}$/i.test(x)) : [];
+  } catch (e) { return []; }
 }
-
-function animateCounter(target) {
-  const el = document.getElementById('counter-number');
-  const duration = 1200;
-  const start = Math.max(0, target - 30);
-  const startTime = performance.now();
-
-  function update(now) {
-    const elapsed = now - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const current = Math.round(start + (target - start) * eased);
-    el.textContent = current.toLocaleString('no');
-    if (progress < 1) requestAnimationFrame(update);
-  }
-  requestAnimationFrame(update);
+function lagreFunn(id) {
+  if (typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)) return;
+  try {
+    const liste = mineFunn();
+    if (!liste.includes(id)) liste.push(id);
+    localStorage.setItem(FUNN_KEY, JSON.stringify(liste.slice(-1000)));
+  } catch (e) {}
+}
+function sistKjentHjem() {
+  try { return Math.max(0, parseInt(localStorage.getItem(HJEM_KEY) || '0', 10) || 0); } catch (e) { return 0; }
+}
+function visTeller(antall, hjem) {
+  const plagg = `${antall} plagg`;
+  document.getElementById('teller').hidden = antall < 1;
+  document.body.classList.toggle('har-teller', antall >= 1);
+  document.getElementById('teller-antall').textContent = plagg;
+  document.getElementById('teller-hjem').textContent = hjem > 0 ? ` · ${hjem} kom hjem` : '';
+  document.getElementById('takk-teller').hidden = antall < 1;
+  document.getElementById('takk-antall').textContent = plagg;
+  document.getElementById('takk-hjem').textContent = hjem > 0
+    ? `${hjem} av dem har kommet hjem igjen`
+    : 'Vi sier fra her når eierne har hentet tingene sine';
+}
+// Viser sist kjente tall med en gang, og oppdaterer når serveren svarer
+async function oppdaterTeller() {
+  const ider = mineFunn();
+  let hjem = Math.min(sistKjentHjem(), ider.length);
+  visTeller(ider.length, hjem);
+  if (!ider.length) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/glemmekassen-sms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ action: 'status', ider: ider.slice(-300) })
+    });
+    const data = await res.json();
+    if (res.ok && Number.isFinite(data.hentet)) {
+      // Funn slettes etter 365 dager – tallet skal ikke gå ned av den grunn
+      hjem = Math.min(ider.length, Math.max(hjem, data.hentet));
+      try { localStorage.setItem(HJEM_KEY, String(hjem)); } catch (e) {}
+      visTeller(ider.length, hjem);
+    }
+  } catch (e) { /* uten nett vises sist kjente tall */ }
 }
 
 function resetApp() {
@@ -2011,8 +2022,10 @@ function resetApp() {
   document.getElementById('step-0').classList.add('active');
   document.querySelector('.scan-intro').style.display = 'block';
   document.getElementById('scan-actions').style.display = 'flex';
+  document.getElementById('teller').style.display = '';
   refreshLocationForNewScan();
   autoStartCamera();
+  oppdaterTeller();
 }
 
 // ── Del app ───────────────────────────────────────────
@@ -2108,7 +2121,7 @@ function triggerInstall() {
 <div style="margin: 0 16px 40px; padding: 20px 24px; background: rgba(255,255,255,0.04); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06);">
   <div style="font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #7a8aaa; margin-bottom: 12px;">🔒 Personvern</div>
   <p style="font-size: 12px; color: #7a8aaa; line-height: 1.7; margin: 0;">
-    Glemmekassen bruker telefonnummeret som er sydd inn i gjenstanden for å varsle eieren om at gjenstanden er funnet. Nummeret brukes bare til å sende SMS-en og lagres ikke hos Glemmekassen. Bilde, gjenstand, farge og funnsted lagres i opptil 365 dager sammen med en kode som eieren får på SMS, og slettes deretter automatisk. Den som har koden kan se funnet og markere det som hentet – da lagres tidspunktet. For å levere tjenesten sendes bildene til Anthropic (leser nummeret og gjenkjenner gjenstanden), og SMS sendes via Sveve. Tjenesten drives av Heidi Thaulow –
+    Glemmekassen bruker telefonnummeret som er sydd inn i gjenstanden for å varsle eieren om at gjenstanden er funnet. Nummeret brukes bare til å sende SMS-en og lagres ikke hos Glemmekassen. Bilde, gjenstand, farge og funnsted lagres i opptil 365 dager sammen med en kode som eieren får på SMS, og slettes deretter automatisk. Den som har koden kan se funnet og markere det som hentet – da lagres tidspunktet. På telefonen til den som finner lagres en liste over funnene som er registrert der, så appen kan vise hvor mange som har kommet hjem. Listen inneholder ingen telefonnummer. For å levere tjenesten sendes bildene til Anthropic (leser nummeret og gjenkjenner gjenstanden), og SMS sendes via Sveve. Tjenesten drives av Heidi Thaulow –
     <a href="mailto:heidi.thaulow@gmail.com" style="color: #00e5a0; text-decoration: none;">heidi.thaulow@gmail.com</a>.
   </p>
 </div>
