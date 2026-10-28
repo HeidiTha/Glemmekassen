@@ -1,11 +1,11 @@
 {
   "name": "Glemmekassen",
   "short_name": "Glemmekassen",
-  "description": "Varsle eiere av glemte gjenstander på sekunder",
+  "description": "Ta bilde av navnelappen og varsle eieren på sekunder",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0a1628",
-  "theme_color": "#0a1628",
+  "background_color": "#f5f0e6",
+  "theme_color": "#203c61",
   "orientation": "portrait",
   "icons": [
     {
