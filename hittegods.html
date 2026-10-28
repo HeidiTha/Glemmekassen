@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0a1628">
+<meta name="theme-color" content="#203c61">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Glemmekassen</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="Glemmekassen">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="icon-192.png">
 
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -589,7 +589,29 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
 .thanks-teller-rad {display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:15px;color:#eef3fb;}
 .thanks-teller-rad strong {color:#f5bd3f;font-size:clamp(30px,9vw,40px);font-weight:850;line-height:1;white-space:nowrap;}
 .thanks-teller-hjem {margin-top:8px;font-size:15px;color:#eef3fb;}
-.thanks-teller:not([hidden]) + .thanks-spacer {flex:0 0 auto;min-height:4px;}
+.thanks-teller:not([hidden]) ~ .thanks-spacer {flex:0 0 auto;min-height:4px;}
+/* Tips om hjemskjermen på takkesiden */
+.hjem-tips {width:100%;max-width:360px;margin:16px auto 0;padding:16px 16px 10px;background:#f5f0e6;color:#203c61;border-radius:20px;text-align:left;box-sizing:border-box;}
+.hjem-tips[hidden] {display:none;}
+.hjem-tips-topp {display:flex;gap:12px;align-items:flex-start;}
+.hjem-tips-ikon {flex:0 0 44px;height:44px;border-radius:12px;background:#203c61;color:#f5bd3f;display:flex;align-items:center;justify-content:center;}
+.hjem-tips-tittel {font-size:16px;font-weight:850;line-height:1.25;}
+.hjem-tips-tekst {font-size:14px;line-height:1.45;color:#405b7d;margin-top:3px;}
+.hjem-tips-knapp {display:block;width:100%;margin-top:14px;min-height:48px;border:0;border-radius:14px;background:#f5bd3f;color:#17345c;font-family:inherit;font-size:15px;font-weight:850;cursor:pointer;}
+.hjem-tips-knapp[hidden],.hjem-tips-steg[hidden] {display:none;}
+.hjem-tips-steg {margin:12px 0 0;padding:10px 12px;background:#fff;border-radius:14px;font-size:14px;line-height:1.5;}
+/* Når tipset vises: litt mindre maskot og tettere avstander, så «Skann en til» fortsatt synes */
+#success-screen.med-tips {padding-top:22px;}
+#success-screen.med-tips .thanks-mascot {width:92px;height:92px;margin-bottom:10px;}
+#success-screen.med-tips .thanks-badge {margin-bottom:12px;padding:8px 16px;}
+#success-screen.med-tips .thanks-heading {font-size:clamp(23px,6.2vw,28px);margin-bottom:10px;}
+#success-screen.med-tips .thanks-message {margin-bottom:14px;}
+#success-screen.med-tips .thanks-teller {padding:12px 16px;margin-bottom:12px;}
+#success-screen.med-tips .thanks-teller-rad strong {font-size:clamp(26px,8vw,34px);}
+#success-screen.med-tips .hjem-tips {margin-top:14px;padding:14px 14px 6px;}
+#success-screen.med-tips .thanks-bottom {margin-top:12px;}
+.hjem-tips-del {display:inline-flex;vertical-align:-3px;color:#0a7cff;}
+.hjem-tips-nei {display:block;margin:6px auto 0;padding:8px 12px;background:none;border:0;color:#405b7d;font-family:inherit;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer;}
 .scan-alt button {display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;}
 .scan-alt button svg {flex-shrink:0;}
 @media(max-width:380px){.scan-alt button {font-size:14px!important;white-space:normal;}}
@@ -1105,6 +1127,19 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
     </div>
     <div class="thanks-spacer"></div>
     <button type="button" class="thanks-next" onclick="resetApp()">Fant du flere ting? Skann en til</button>
+    <!-- Tips: legg appen på hjemskjermen. Vises fra andre funn, til man sier «Nei takk» eller har lagt den til. -->
+    <div class="hjem-tips" id="hjem-tips" hidden>
+      <div class="hjem-tips-topp">
+        <span class="hjem-tips-ikon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 8v6M9 11h6"/></svg></span>
+        <div>
+          <div class="hjem-tips-tittel">Legg Glemmekassen på hjemskjermen</div>
+          <div class="hjem-tips-tekst">Da åpner den som en vanlig app – raskere neste gang du finner noe.</div>
+        </div>
+      </div>
+      <button type="button" class="hjem-tips-knapp" id="hjem-tips-legg-til" hidden>Legg til på hjemskjermen</button>
+      <p class="hjem-tips-steg" id="hjem-tips-ios" hidden>Trykk <b>Del</b> <span class="hjem-tips-del" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span> og velg <b>«Legg til på Hjem-skjerm»</b></p>
+      <button type="button" class="hjem-tips-nei" id="hjem-tips-nei">Nei takk</button>
+    </div>
     <div class="thanks-bottom">Vil du hjelpe noe hjem?</div>
   </div>
 </div>
@@ -1960,7 +1995,45 @@ function visTeller(antall, hjem) {
   document.getElementById('takk-hjem').textContent = hjem > 0
     ? `${hjem} av dem har kommet hjem igjen`
     : 'Vi sier fra her når eierne har hentet tingene sine';
+  visHjemTips(antall);
 }
+// ── Tips: legg appen på hjemskjermen ──────────────────
+// Android/Chrome: telefonen gir oss en egen «Legg til»-dialog. iPhone: vi viser hvordan.
+const HJEM_TIPS_KEY = 'glemmekassen_hjemskjerm_tips';
+let installDialog = null;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installDialog = e; visHjemTips(mineFunn().length); });
+window.addEventListener('appinstalled', () => { installDialog = null; document.getElementById('hjem-tips').hidden = true; });
+function erPaaHjemskjermen() {
+  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+function visHjemTips(antall) {
+  const boks = document.getElementById('hjem-tips');
+  let sagtNei = false;
+  try { sagtNei = localStorage.getItem(HJEM_TIPS_KEY) === 'nei'; } catch (e) {}
+  const iphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const vis = antall >= 2 && !sagtNei && !erPaaHjemskjermen() && (installDialog || iphone);
+  boks.hidden = !vis;
+  document.getElementById('success-screen').classList.toggle('med-tips', vis);
+  if (!vis) return;
+  document.getElementById('hjem-tips-legg-til').hidden = !installDialog;
+  document.getElementById('hjem-tips-ios').hidden = !!installDialog;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('hjem-tips-nei').addEventListener('click', () => {
+    try { localStorage.setItem(HJEM_TIPS_KEY, 'nei'); } catch (e) {}
+    document.getElementById('hjem-tips').hidden = true;
+    document.getElementById('success-screen').classList.remove('med-tips');
+  });
+  document.getElementById('hjem-tips-legg-til').addEventListener('click', async () => {
+    if (!installDialog) return;
+    installDialog.prompt();
+    try { await installDialog.userChoice; } catch (e) {}
+    installDialog = null;
+    document.getElementById('hjem-tips').hidden = true;
+    document.getElementById('success-screen').classList.remove('med-tips');
+  });
+});
+
 // Viser sist kjente tall med en gang, og oppdaterer når serveren svarer
 async function oppdaterTeller() {
   const ider = mineFunn();
@@ -2038,20 +2111,6 @@ function shareApp() {
   }
 }
 
-// ── Homescreen card ───────────────────────────────────
-function showHomescreenCard() {
-  const card = document.getElementById('homescreen-card');
-  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone;
-  const isAndroidInstalled = window.matchMedia('(display-mode: standalone)').matches;
-  if (!isStandalone && !isAndroidInstalled) {
-    card.style.display = 'block';
-    if (isIOS) {
-      document.getElementById('homescreen-btn').textContent = 'Se hvordan du gjør det';
-    }
-  }
-}
-
 // ── Toast ──────────────────────────────────────────────
 let toastTimer;
 function showToast(msg, type) {
@@ -2077,45 +2136,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// PWA Install prompt
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  const banner = document.getElementById('install-banner');
-  banner.style.display = 'flex';
-});
-
-function triggerInstall() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
-  } else {
-    // iPhone: show manual steps
-    document.getElementById('iphone-install-steps').style.display = 'block';
-    document.getElementById('homescreen-btn').style.display = 'none';
-  }
-}
-
 </script>
-
-<!-- PWA Install Banner -->
-<div id="install-banner" style="display:none; position:fixed; bottom:80px; left:16px; right:16px; background:#111d35; border:1px solid rgba(0,229,160,0.3); border-radius:16px; padding:16px 20px; z-index:9999; display:none; align-items:center; gap:14px; box-shadow:0 8px 32px rgba(0,0,0,0.4);">
-  <span style="font-size:32px"><svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="16" width="28" height="16" rx="2" fill="#172240" stroke="#00C896" stroke-width="1.5"/>
-        <path d="M4 16 L8 9 L28 9 L32 16" stroke="#00C896" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
-        <path d="M12 9 Q13 5 15 7 Q17 4 18 8" stroke="#ff6b6b" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path d="M20 9 Q21 5 23 6 Q24 4 25 8" stroke="#4ecdc4" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path d="M16 9 Q17 6 18 5 Q19 6 20 9" stroke="#ffe66d" stroke-width="2" fill="none" stroke-linecap="round"/>
-      </svg></span>
-  <div style="flex:1">
-    <div style="font-weight:600; color:#f0f4ff; font-size:15px;">Installer Glemmekassen</div>
-    <div style="font-size:12px; color:#7a8aaa; margin-top:2px;">Legg til på hjemskjermen for raskere tilgang</div>
-  </div>
-  <button onclick="triggerInstall()" style="background:#00e5a0; color:#0a1628; border:none; border-radius:10px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Installer</button>
-  <button onclick="document.getElementById('install-banner').style.display='none'" style="background:none; border:none; color:#7a8aaa; font-size:20px; cursor:pointer; padding:0 4px;">×</button>
-</div>
-
 
 <!-- Personvernerklæring -->
 <div style="margin: 0 16px 40px; padding: 20px 24px; background: rgba(255,255,255,0.04); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06);">
