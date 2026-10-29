@@ -17,6 +17,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 | Global teller | tabellen `counter` + funksjonen `increment_counter` | Supabase | (brukes ikke av appen nå)
 | SMS | serverfunksjonen `glemmekassen-sms` → Sveve | `supabase/functions/glemmekassen-sms` |
 | Lese nummer / gjenkjenne gjenstand | serverfunksjonen `claude-proxy` → Anthropic | `supabase/functions/claude-proxy` |
+| Driftssiden (bare for teamet) | `drift/index.html` + serverfunksjonen `glemmekassen-drift`. Teampassordet ligger som secret `DRIFT_PASSORD`, og `DRIFT_NOKKEL` signerer innloggingen (30 dager). Viser bare opptelte tall | glemmekassen.com/drift |
 
 ## Faste regler
 
@@ -36,6 +37,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 - Hvis lesing av nummer slutter å virke: sjekk først kreditten på console.anthropic.com (Plans & Billing).
 - Bilder og funn slettes automatisk etter 365 dager (`KEEP_DAYS`). Oppryddingen kjøres hver gang en SMS sendes.
 - Bare norske mobilnummer (8 siffer, starter med 4 eller 9).
+- Driftssiden: maks 5 feil passord per 15 minutter per IP. Grensene `MAX_SMS_PER_DAY` og `MAX_AI_CALLS_PER_DAY` står også i `glemmekassen-drift` – endre alle stedene samtidig. Driftssiden skal aldri vise telefonnummer, bilder, koder eller steder for enkeltfunn.
 - Koden er 6 tegn uten 0/O og 1/I/L. Maks 10 feil koder per time per IP (`MAX_FEIL_KODER_PER_TIME`), så ingen kan prøve seg fram til andres funn.
 - SMS-teksten har ingen emoji, og avsendernavnet er `GlemmeKasse` (Sveve tillater maks 11 tegn). Uten emoji får hver SMS-del plass til 153 tegn i stedet for 67, og det blir billigere.
 
@@ -46,6 +48,8 @@ Krever Supabase CLI og innlogging (`supabase login`). Fra repo-mappen:
 ```bash
 supabase functions deploy glemmekassen-sms --project-ref jyajkriknplrhsxustpf --use-api --no-verify-jwt
 ```
+
+Samme kommando for `claude-proxy` og `glemmekassen-drift` – bytt bare ut navnet.
 
 Test etterpå med eget telefonnummer. Funksjonen må ha `--no-verify-jwt`, ellers slutter appen å virke.
 
