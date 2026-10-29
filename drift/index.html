@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Glemmekassen – Drift</title>
+<!-- Driftssiden for teamet: glemmekassen.com/drift. Selve siden er offentlig, men tallene krever teampassordet,
+     som sjekkes av serverfunksjonen glemmekassen-drift. Siden viser bare opptelte tall – ingen persondata. -->
+<style>
+:root{--navy:#203c61;--gold:#f0b53f;--cream:#f5f0e6;--muted:#4f6684;--line:#eee7dc;--hjem:#203c61;--ikke:#a9c1e3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--navy);font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:22px 20px 40px}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top img{width:44px;height:44px;border-radius:10px;background:#fff}
+.top h1{font-size:24px;margin:0}.top small{display:block;font-size:13px;color:var(--muted);font-weight:600}
+.knapper{margin-left:auto;display:flex;gap:8px}
+.knapp{border:2px solid var(--navy);background:#fff;color:var(--navy);border-radius:12px;padding:8px 14px;font:inherit;font-weight:750;font-size:14px;cursor:pointer}
+.knapp:focus-visible,#passord:focus-visible,.logg-inn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:18px}
+.k{background:#fff;border-radius:18px;padding:16px 18px}
+.k small{font-size:13px;color:var(--muted);font-weight:700}
+.k b{display:block;font-size:32px;font-weight:850;margin-top:4px;font-variant-numeric:tabular-nums}
+.k b span{font-size:15px;color:var(--muted);font-weight:700}
+.k p{margin:8px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
+.bar{height:8px;background:#e8e2d5;border-radius:6px;margin-top:10px;overflow:hidden}.bar div{height:100%;background:var(--navy);border-radius:6px}
+.bar.varm div{background:#b26a00}
+.rad{display:grid;grid-template-columns:1.6fr 1fr;gap:12px;margin-top:12px}
+.kort{background:#fff;border-radius:18px;padding:18px 20px;min-width:0}
+.kort h2{font-size:17px;margin:0 0 4px}.kort .h{font-size:13px;color:var(--muted);margin:0 0 12px;line-height:1.4}
+.leg{display:flex;gap:16px;font-size:13px;color:var(--muted);font-weight:650;margin-bottom:6px;flex-wrap:wrap}
+.leg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+#diagram{width:100%;height:auto;display:block}
+.type{display:grid;grid-template-columns:120px 1fr 36px;align-items:center;gap:10px;font-size:14px;margin:8px 0}
+.type .spor{height:14px;background:#f1ece2;border-radius:4px;overflow:hidden}.type .spor div{height:100%;background:var(--navy);border-radius:0 4px 4px 0}
+.type b{text-align:right;font-variant-numeric:tabular-nums}
+.maaned{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.maaned div{background:var(--cream);border-radius:14px;padding:14px}
+.maaned b{display:block;font-size:28px;font-weight:850;font-variant-numeric:tabular-nums}
+.maaned small{font-size:13px;color:var(--muted);font-weight:700}.maaned p{margin:6px 0 0;font-size:12px;color:var(--muted)}
+.fot{margin-top:16px;font-size:12px;color:var(--muted);text-align:center}
+.feil{background:#fff2da;border-radius:14px;padding:12px 16px;margin-top:14px;font-size:14px}
+/* Innlogging */
+#innlogging{max-width:380px;margin:12vh auto 0;background:#fff;border-radius:22px;padding:26px 24px;text-align:center}
+#innlogging img{width:64px;height:64px;border-radius:14px}
+#innlogging h1{font-size:22px;margin:10px 0 4px}#innlogging p{color:var(--muted);font-size:14px;margin:0 0 16px}
+#passord{width:100%;min-height:52px;border:2px solid #9cabbc;border-radius:14px;padding:12px 14px;font:inherit;font-size:16px;color:var(--navy)}
+.logg-inn{width:100%;min-height:52px;margin-top:10px;border:0;border-radius:14px;background:var(--navy);color:#fff;font:inherit;font-weight:800;font-size:17px;cursor:pointer}
+.logg-inn:disabled{opacity:.6}
+#innlogging .melding{color:#a13a1c;font-weight:700;font-size:14px;min-height:1.3em;margin:10px 0 0}
+[hidden]{display:none!important}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rad{grid-template-columns:1fr}}
+@media(max-width:420px){.k b{font-size:26px}.type{grid-template-columns:96px 1fr 30px}}
+</style></head><body>
+
+<form id="innlogging" hidden>
+  <img src="data:image/png;base64,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" alt="">
+  <h1>Glemmekassen · Drift</h1>
+  <p>Bare for teamet. Skriv inn teampassordet.</p>
+  <label for="passord" style="position:absolute;left:-9999px">Teampassord</label>
+  <input id="passord" type="password" autocomplete="current-password" required>
+  <button class="logg-inn" id="logg-inn" type="submit">Logg inn</button>
+  <p class="melding" id="melding" role="alert"></p>
+</form>
+
+<main id="oversikt" hidden>
+  <div class="top">
+    <img src="data:image/png;base64,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" alt="">
+    <div><h1>Glemmekassen · Drift</h1><small id="oppdatert">Laster …</small></div>
+    <div class="knapper"><button class="knapp" id="oppdater" type="button">Oppdater</button><button class="knapp" id="logg-ut" type="button">Logg ut</button></div>
+  </div>
+  <div class="feil" id="feil" role="alert" hidden></div>
+
+  <div class="kpis">
+    <div class="k"><small>SMS siste 24 timer</small><b id="sms">–</b><div class="bar" id="sms-bar"><div style="width:0"></div></div><p>Grensen stopper SMS-ene når den nås</p></div>
+    <div class="k"><small>Claude-kall i dag</small><b id="ai">–</b><div class="bar" id="ai-bar"><div style="width:0"></div></div><p>Lesing av nummer og plagg</p></div>
+    <div class="k"><small>Funn siste 30 dager</small><b id="funn30">–</b><p id="endring">&nbsp;</p></div>
+    <div class="k"><small>Kom hjem</small><b id="andel">–</b><p id="andel-tekst">Markert «Jeg har hentet den»</p></div>
+    <div class="k"><small>Tid til hentet</small><b id="tid">–</b><p>Typisk tid fra SMS til «hentet»</p></div>
+  </div>
+
+  <div class="rad">
+    <div class="kort">
+      <h2>Funn per dag – siste 14 dager</h2>
+      <p class="h">Hvor mange som ble registrert, og hvor mange av dem som har kommet hjem</p>
+      <div class="leg"><span><i style="background:var(--hjem)"></i>Kom hjem</span><span><i style="background:var(--ikke)"></i>Ikke hentet ennå</span></div>
+      <svg id="diagram" viewBox="0 0 640 250" role="img" aria-label="Søylediagram: funn per dag siste 14 dager"></svg>
+    </div>
+    <div class="kort">
+      <h2>Hva blir funnet</h2>
+      <p class="h">Siste 30 dager</p>
+      <div id="typer"></div>
+    </div>
+  </div>
+
+  <div class="rad" style="grid-template-columns:1fr">
+    <div class="kort">
+      <h2>Denne måneden</h2>
+      <p class="h">Grunnlag for kostnadene</p>
+      <div class="maaned">
+        <div><small>SMS sendt</small><b id="sms-maaned">–</b><p>Hver SMS er ca. 2 SMS-deler. Ganger dere med prisen hos Sveve, får dere kostnaden.</p></div>
+        <div><small>Claude-kall</small><b id="ai-maaned">–</b><p>Se faktisk kostnad på console.anthropic.com (Usage).</p></div>
+      </div>
+    </div>
+  </div>
+  <p class="fot">Siden viser bare opptelte tall – ingen telefonnummer, bilder, koder eller steder.</p>
+</main>
+
+<script>
+const API = 'https://jyajkriknplrhsxustpf.supabase.co/functions/v1/glemmekassen-drift';
+const NOKKEL = 'glemmekassen_drift_billett';
+const $ = id => document.getElementById(id);
+const NAVN = { 'jakke':'Jakke', 'genser':'Genser', 'bukse':'Bukse', 'sko':'Sko', 'sekk':'Sekk', 'lue/skjerf':'Lue/skjerf', 'sportsutstyr':'Sportsutstyr', 'vannflaske':'Vannflaske', 'annet':'Annet' };
+const tall = n => Number(n).toLocaleString('nb-NO');
+
+function billett() { try { return localStorage.getItem(NOKKEL) || ''; } catch (e) { return ''; } }
+function lagre(b) { try { b ? localStorage.setItem(NOKKEL, b) : localStorage.removeItem(NOKKEL); } catch (e) {} }
+
+function visInnlogging(tekst) {
+  $('oversikt').hidden = true; $('innlogging').hidden = false;
+  $('melding').textContent = tekst || '';
+  $('passord').focus();
+}
+
+async function kall(body) {
+  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, data };
+}
+
+$('innlogging').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('logg-inn').disabled = true; $('melding').textContent = '';
+  try {
+    const { ok, data } = await kall({ action: 'login', passord: $('passord').value });
+    if (!ok) throw new Error(data.error || 'Kunne ikke logge inn');
+    lagre(data.billett); $('passord').value = '';
+    await hentTall();
+  } catch (err) {
+    $('melding').textContent = err.message === 'Failed to fetch' ? 'Får ikke kontakt. Sjekk nettet.' : err.message;
+  } finally { $('logg-inn').disabled = false; }
+});
+$('logg-ut').addEventListener('click', () => { lagre(''); visInnlogging(''); });
+$('oppdater').addEventListener('click', () => hentTall());
+
+function settBar(id, verdi, maks) {
+  const p = Math.min(100, Math.round((verdi / maks) * 100));
+  const bar = $(id); bar.firstElementChild.style.width = p + '%';
+  bar.classList.toggle('varm', p >= 75);
+}
+
+function tegnDiagram(perDag) {
+  const svg = $('diagram'), NS = 'http://www.w3.org/2000/svg';
+  svg.replaceChildren();
+  const W = 640, H = 250, L = 34, B = 26, T = 14;
+  const maks = Math.max(5, ...perDag.map(d => d.funn));
+  const steg = Math.ceil(maks / 5), topp = steg * 5;
+  const el = (navn, attr, tekst) => { const n = document.createElementNS(NS, navn); for (const k in attr) n.setAttribute(k, attr[k]); if (tekst != null) n.textContent = tekst; svg.appendChild(n); return n; };
+  for (let v = 0; v <= topp; v += steg) {
+    const y = T + (H - T - B) * (1 - v / topp);
+    el('line', { x1: L, x2: W, y1: y, y2: y, stroke: '#eee7dc' });
+    el('text', { x: L - 8, y: y + 4, 'font-size': 11, fill: '#6a7f98', 'text-anchor': 'end' }, v);
+  }
+  const bw = (W - L) / perDag.length, sk = (H - T - B) / topp;
+  perDag.forEach((d, i) => {
+    const x = L + i * bw + bw * 0.2, w = bw * 0.6, yHjem = H - B - d.hjem * sk, yTopp = H - B - d.funn * sk;
+    const g = el('g', {});
+    const tittel = document.createElementNS(NS, 'title');
+    const dato = new Date(d.dag + 'T12:00:00');
+    tittel.textContent = `${dato.toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric', month: 'short' })}: ${d.funn} funn, ${d.hjem} kom hjem`;
+    g.appendChild(tittel);
+    // usynlig, større treffflate for musepeker
+    const treff = document.createElementNS(NS, 'rect'); Object.entries({ x: L + i * bw, y: T, width: bw, height: H - T - B, fill: 'transparent' }).forEach(([k, v]) => treff.setAttribute(k, v)); g.appendChild(treff);
+    if (d.hjem) { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', `M${x} ${H - B}V${yHjem + 1}H${x + w}V${H - B}Z`); p.setAttribute('fill', '#203c61'); g.appendChild(p); }
+    if (d.funn > d.hjem) { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', `M${x} ${yHjem - 1}V${yTopp + 4}q0-4 4-4h${w - 8}q4 0 4 4V${yHjem - 1}Z`); p.setAttribute('fill', '#a9c1e3'); g.appendChild(p); }
+    svg.appendChild(g);
+    el('text', { x: x + w / 2, y: H - 8, 'font-size': 11, fill: '#6a7f98', 'text-anchor': 'middle' }, String(dato.getDate()) + '.');
+  });
+  const maksDag = perDag.reduce((a, b) => (b.funn > a.funn ? b : a), perDag[0]);
+  if (maksDag && maksDag.funn) {
+    const i = perDag.indexOf(maksDag);
+    el('text', { x: L + i * bw + bw / 2, y: H - B - maksDag.funn * sk - 6, 'font-size': 12, 'font-weight': 800, fill: '#203c61', 'text-anchor': 'middle' }, maksDag.funn);
+  }
+}
+
+function visTall(t) {
+  $('innlogging').hidden = true; $('oversikt').hidden = false; $('feil').hidden = true;
+  const kl = new Date(t.oppdatert).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
+  $('oppdatert').textContent = `Bare for teamet · oppdatert ${kl}`;
+  $('sms').replaceChildren(); $('sms').append(tall(t.smsSiste24t) + ' '); const s1 = document.createElement('span'); s1.textContent = '/ ' + t.maxSms; $('sms').append(s1);
+  settBar('sms-bar', t.smsSiste24t, t.maxSms);
+  $('ai').replaceChildren(); $('ai').append(tall(t.aiIDag) + ' '); const s2 = document.createElement('span'); s2.textContent = '/ ' + t.maxAi; $('ai').append(s2);
+  settBar('ai-bar', t.aiIDag, t.maxAi);
+  $('funn30').textContent = tall(t.funn30);
+  $('endring').textContent = t.funnForrige30
+    ? `${t.funn30 >= t.funnForrige30 ? '+' : '−'}${Math.abs(Math.round((t.funn30 / t.funnForrige30 - 1) * 100))} % fra forrige 30 dager · ${tall(t.funn7)} siste 7 dager`
+    : `${tall(t.funn7)} siste 7 dager`;
+  $('andel').textContent = t.andelHjem === null ? '–' : t.andelHjem + ' %';
+  $('andel-tekst').textContent = `${tall(t.hjem30)} av ${tall(t.funn30)} markert «Jeg har hentet den»`;
+  const timer = t.medianTimerTilHentet;
+  $('tid').textContent = timer === null ? '–' : timer < 24 ? `${String(timer).replace('.', ',')} t` : `${String(Math.round(timer / 2.4) / 10).replace('.', ',')} d`;
+  tegnDiagram(t.perDag);
+  const typer = Object.entries(t.typer).sort((a, b) => b[1] - a[1]);
+  const maks = Math.max(1, ...typer.map(x => x[1]));
+  $('typer').replaceChildren(...(typer.length ? typer.map(([type, n]) => {
+    const rad = document.createElement('div'); rad.className = 'type';
+    const navn = document.createElement('span'); navn.textContent = NAVN[type] || type;
+    const spor = document.createElement('div'); spor.className = 'spor'; const fyll = document.createElement('div'); fyll.style.width = (n / maks * 100) + '%'; spor.appendChild(fyll);
+    const b = document.createElement('b'); b.textContent = n;
+    rad.append(navn, spor, b); return rad;
+  }) : [Object.assign(document.createElement('p'), { textContent: 'Ingen funn ennå.', className: 'h' })]));
+  $('sms-maaned').textContent = tall(t.smsMaaned);
+  $('ai-maaned').textContent = t.aiKjent ? tall(t.aiMaaned) : '–';
+}
+
+async function hentTall() {
+  if (!billett()) { visInnlogging(''); return; }
+  try {
+    const { ok, status, data } = await kall({ action: 'tall', billett: billett() });
+    if (status === 401) { lagre(''); visInnlogging('Du må logge inn på nytt.'); return; }
+    if (!ok) throw new Error(data.error || 'Kunne ikke hente tallene');
+    visTall(data.tall);
+  } catch (err) {
+    if (!$('oversikt').hidden) { $('feil').textContent = 'Kunne ikke oppdatere: ' + (err.message === 'Failed to fetch' ? 'får ikke kontakt.' : err.message); $('feil').hidden = false; }
+    else visInnlogging(err.message === 'Failed to fetch' ? 'Får ikke kontakt. Sjekk nettet.' : err.message);
+  }
+}
+hentTall();
+</script>
+</body></html>
