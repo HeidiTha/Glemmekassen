@@ -1,7 +1,7 @@
 // Glemmekassen: sender SMS til eieren og lagrer funnet bak en kort kode.
 // POST {action:"sms"}: send SMS.  POST {action:"hentet"}: eieren har hentet tingen.
 // POST {action:"status", ider:[…]}: hvor mange av finnerens funn som er hentet (telleren i appen).
-// GET ?kode=K7M4Q2: hent funnet til eiersiden.  GET ?id=: samme, for gamle SMS-lenker.
+// GET ?kode=482915 (eldre: K7M4Q2): hent funnet til eiersiden.  GET ?id=: samme, for gamle SMS-lenker.
 // SMS-teksten lages her på serveren – nettleseren sender bare korte, rensede felter,
 // så ingen kan bruke tjenesten til å sende egne meldinger.
 
@@ -70,23 +70,28 @@ function smsText(gjenstand: string, farge: string, posisjon: string, kode: strin
   const hvorMedPreposisjon = /^(på|i|ved|hos)\s/i.test(hvor) ? hvor : `på ${hvor}`;
   return `Hei! Noen har funnet ${ting} som kan være ${o.din}, ${hvorMedPreposisjon}.
 
-Gå til glemmekassen.com/kode og tast koden ${kode} for å se bilde og kart.
+Koden din er ${kode}. Se bilde og kart på glemmekassen.com/kode
 
 Føl deg trygg: Glemmekassen ber aldri om penger, passord eller BankID.
 
 Fikk du ${o.den} igjen? Send en liten hilsen til Glemmekassen på Instagram @glemmekass1`;
 }
 
-// Koden: 6 tegn uten de som er lette å forveksle (ikke 0/O eller 1/I/L).
-const KODE_TEGN = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+// Koden: 6 siffer (f.eks. 482915). Bare tall gjør at iPhone og Android kan foreslå koden på tastaturet.
 function nyKode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(6));
-  return Array.from(bytes, (b) => KODE_TEGN[b % KODE_TEGN.length]).join("");
+  // Trekker et tilfeldig tall 0–999999 uten skjevhet og fyller ut med nuller foran
+  const grense = 4294000000; // største multiplum av 1 000 000 under 2^32
+  let n = 0;
+  do { n = crypto.getRandomValues(new Uint32Array(1))[0]; } while (n >= grense);
+  return String(n % 1000000).padStart(6, "0");
 }
+// Eldre SMS-er har koder med 6 bokstaver og tall uten 0/O og 1/I/L (f.eks. K7M4Q2). De virker fortsatt.
+const GAMMEL_KODE_TEGN = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 // Tåler små bokstaver, mellomrom og bindestrek fra eieren
 function rensKode(value: unknown): string {
   const k = String(value ?? "").toUpperCase().replace(/[\s-]/g, "");
-  return new RegExp(`^[${KODE_TEGN}]{6}$`).test(k) ? k : "";
+  if (/^[0-9]{6}$/.test(k)) return k;
+  return new RegExp(`^[${GAMMEL_KODE_TEGN}]{6}$`).test(k) ? k : "";
 }
 
 // Grense for feil koder per IP, så ingen kan prøve seg fram til andres funn
@@ -124,7 +129,7 @@ Deno.serve(async (req) => {
       if (params.has("kode")) {
         if (forMangeFeil(ip)) return json({ error: "For mange feil koder. Vent litt og prøv igjen." }, 429);
         const kode = rensKode(params.get("kode"));
-        if (!kode) { registrerFeil(ip); return json({ error: "Koden har 6 tegn, f.eks. K7M4Q2" }, 400); }
+        if (!kode) { registrerFeil(ip); return json({ error: "Koden har 6 siffer, f.eks. 482915" }, 400); }
         filter = `kode=eq.${kode}`;
       } else {
         // Gamle SMS-er hadde lenke med id
