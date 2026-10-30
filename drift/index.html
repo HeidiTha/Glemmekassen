@@ -46,6 +46,36 @@ main{max-width:1200px;margin:0 auto;padding:22px 20px 40px}
 .logg-inn{width:100%;min-height:52px;margin-top:10px;border:0;border-radius:14px;background:var(--navy);color:#fff;font:inherit;font-weight:800;font-size:17px;cursor:pointer}
 .logg-inn:disabled{opacity:.6}
 #innlogging .melding{color:#a13a1c;font-weight:700;font-size:14px;min-height:1.3em;margin:10px 0 0}
+/* Faner */
+.faner{display:flex;gap:6px;margin-top:16px}
+.faner button{border:0;background:#fff;color:var(--muted);border-radius:12px;padding:9px 16px;font:inherit;font-weight:750;font-size:14px;cursor:pointer}
+.faner button[aria-selected="true"]{background:var(--navy);color:#fff}
+.faner button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+/* Kostnader – fargene er sjekket for fargeblindhet; tabellene viser de samme tallene */
+:root{--k-sms:#2f5f9e;--k-claude:#d99a1e;--k-trykk:#5ba3d9;--k-domene:#b5523b;--k-annet:#7b6bb8;--k-kost:#2f5f9e;--k-inn:#3a9a6e}
+.rad.halv{grid-template-columns:1fr 1fr}
+.kort svg{width:100%;height:auto;display:block}
+.formel{background:var(--cream);border-radius:12px;padding:10px 14px;font-size:14px;margin:10px 0 0;font-variant-numeric:tabular-nums}
+.tabell{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+.tabell th{text-align:left;color:var(--muted);font-size:12px;font-weight:700;padding:6px 8px 6px 0;border-bottom:1px solid var(--line)}
+.tabell td{padding:9px 8px 9px 0;border-bottom:1px solid #f4efe6;font-variant-numeric:tabular-nums;vertical-align:middle}
+.tabell .r{text-align:right}.tabell tfoot td{font-weight:850;border:0;padding-top:12px}
+.tabell td i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
+.tabell td.inn{color:#2b7a55;font-weight:750}
+.tabell-ramme{overflow-x:auto;max-height:520px;overflow-y:auto}
+.kort-topp{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.ny-post{display:grid;grid-template-columns:150px minmax(0,1fr) 220px 130px auto;gap:10px;align-items:end;margin-top:12px}
+.ny-post>*{min-width:0}
+.ny-post label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.ny-post input,.ny-post select{width:100%;min-width:0;box-sizing:border-box;min-height:46px;border:2px solid #cfd8e3;border-radius:12px;padding:8px 10px;font:inherit;font-size:15px;color:var(--navy);background:#fff}
+.ny-post input:focus,.ny-post select:focus{outline:3px solid var(--gold);outline-offset:1px;border-color:var(--navy)}
+.legg-til{margin-top:0;min-height:46px;padding:0 20px;width:auto}
+.melding-liten{font-size:14px;font-weight:700;min-height:1.3em;margin:8px 0 0;color:#a13a1c}.melding-liten.ok{color:#2b7a55}
+.slett{border:0;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 6px}
+.slett.bekreft{color:#a13a1c}
+.slett:focus-visible{outline:3px solid var(--gold);border-radius:6px}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.rad.halv{grid-template-columns:1fr}.ny-post{grid-template-columns:1fr 1fr}.ny-post .bred{grid-column:1/-1}.legg-til{grid-column:1/-1}}
 [hidden]{display:none!important}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rad{grid-template-columns:1fr}}
 @media(max-width:420px){.k b{font-size:26px}.type{grid-template-columns:96px 1fr 30px}}
@@ -69,6 +99,11 @@ main{max-width:1200px;margin:0 auto;padding:22px 20px 40px}
   </div>
   <div class="feil" id="feil" role="alert" hidden></div>
 
+  <div class="faner" role="tablist" aria-label="Velg visning">
+    <button type="button" role="tab" id="fane-knapp-oversikt" aria-controls="fane-oversikt" aria-selected="true">Oversikt</button>
+    <button type="button" role="tab" id="fane-knapp-kost" aria-controls="fane-kost" aria-selected="false">Kostnader</button>
+  </div>
+  <section id="fane-oversikt" role="tabpanel" aria-labelledby="fane-knapp-oversikt">
   <div class="kpis">
     <div class="k"><small>SMS siste 24 timer</small><b id="sms">–</b><div class="bar" id="sms-bar"><div style="width:0"></div></div><p>Grensen stopper SMS-ene når den nås</p></div>
     <div class="k"><small>Claude-kall i dag</small><b id="ai">–</b><div class="bar" id="ai-bar"><div style="width:0"></div></div><p>Lesing av nummer og plagg</p></div>
@@ -91,16 +126,65 @@ main{max-width:1200px;margin:0 auto;padding:22px 20px 40px}
     </div>
   </div>
 
-  <div class="rad" style="grid-template-columns:1fr">
-    <div class="kort">
-      <h2>Denne måneden</h2>
-      <p class="h">Grunnlag for kostnadene</p>
-      <div class="maaned">
-        <div><small>SMS sendt</small><b id="sms-maaned">–</b><p>Hver SMS er ca. 2 SMS-deler. Ganger dere med prisen hos Sveve, får dere kostnaden.</p></div>
-        <div><small>Claude-kall</small><b id="ai-maaned">–</b><p>Se faktisk kostnad på console.anthropic.com (Usage).</p></div>
+  </section>
+  <section id="fane-kost" role="tabpanel" aria-labelledby="fane-knapp-kost" hidden>
+    <div class="feil" id="kost-mangler" hidden>Kostnadene er ikke satt opp ennå. Kjør <b>supabase/sql/kostnader.sql</b> i Supabase (SQL Editor), så kommer tallene her.</div>
+    <div class="kpis">
+      <div class="k"><small id="k-mnd-tittel">Kostnad denne måneden</small><b id="k-mnd">–</b><p id="k-mnd-tekst">&nbsp;</p></div>
+      <div class="k"><small id="k-lop-tittel">Løpende kostnad</small><b id="k-lop">–</b><p id="k-lop-tekst">&nbsp;</p></div>
+      <div class="k"><small>Investert så langt</small><b id="k-inv">–</b><p>Domene, trykk, Claude til koding og annet</p></div>
+      <div class="k"><small>Inntekter så langt</small><b id="k-inn">–</b><p id="k-inn-tekst">&nbsp;</p></div>
+      <div class="k"><small>Kostnad per plagg som kom hjem</small><b id="k-plagg">–</b><p id="k-plagg-tekst">&nbsp;</p></div>
+    </div>
+    <div class="rad halv">
+      <div class="kort">
+        <h2>Løpende kostnad per måned</h2>
+        <p class="h" id="lop-forklaring">Antall SMS × 2,60 kr (Sveve 0,60 kr + Claude 2,00 kr)</p>
+        <svg id="diagram-lop" viewBox="0 0 560 250" role="img" aria-label="Søylediagram: løpende kostnad per måned"></svg>
+        <p class="formel" id="lop-formel"></p>
+      </div>
+      <div class="kort">
+        <h2>Total kostnad per måned</h2>
+        <p class="h">Alt vi betaler for, fordelt på type</p>
+        <div class="leg" id="leg-total"></div>
+        <svg id="diagram-total" viewBox="0 0 560 250" role="img" aria-label="Stablet søylediagram: total kostnad per måned"></svg>
       </div>
     </div>
-  </div>
+    <div class="rad halv">
+      <div class="kort">
+        <h2>Inntekter og kostnader per måned</h2>
+        <p class="h">Gaver, sponsorer og støtte mot alt vi betaler</p>
+        <div class="leg"><span><i style="background:var(--k-kost)"></i>Kostnader</span><span><i style="background:var(--k-inn)"></i>Inntekter</span></div>
+        <svg id="diagram-inn" viewBox="0 0 560 250" role="img" aria-label="Søylediagram: inntekter og kostnader per måned"></svg>
+      </div>
+      <div class="kort">
+        <h2>Totalt siden start</h2>
+        <p class="h" id="tot-forklaring">Samlet kostnad hittil, og hva den går til</p>
+        <svg id="diagram-tot" viewBox="0 0 560 44" role="img" aria-label="Fordeling av kostnadene siden start"></svg>
+        <table class="tabell"><thead><tr><th>Type</th><th class="r">Hittil</th><th class="r">Andel</th></tr></thead><tbody id="tot-rader"></tbody>
+        <tfoot id="tot-fot"></tfoot></table>
+      </div>
+    </div>
+    <div class="rad" style="grid-template-columns:1fr">
+      <div class="kort">
+        <div class="kort-topp"><div><h2>Kostnader og inntekter</h2><p class="h">Teamet legger dem inn selv. De lagres på serveren, bak teampassordet.</p></div>
+          <button class="knapp" id="last-ned" type="button">Last ned som regneark</button></div>
+        <form id="ny-post" class="ny-post" novalidate>
+          <label>Dato<input type="date" id="post-dato" required></label>
+          <label class="bred">Hva<input type="text" id="post-hva" maxlength="80" placeholder="F.eks. plakater til skolene" required></label>
+          <label>Type<select id="post-type" required>
+            <optgroup label="Kostnad"><option value="claude">Claude til koding</option><option value="trykk">Trykk av materiell</option><option value="domene">Domene</option><option value="annet">Annen kostnad</option></optgroup>
+            <optgroup label="Inntekt"><option value="gave">Gave (f.eks. Vipps)</option><option value="sponsor">Sponsor</option><option value="stotte">Støtte (f.eks. kommune, FAU)</option><option value="annen_inntekt">Annen inntekt</option></optgroup>
+          </select></label>
+          <label>Beløp (kr)<input type="text" id="post-belop" inputmode="decimal" placeholder="0" required></label>
+          <button class="logg-inn legg-til" id="post-lagre" type="submit">Legg til</button>
+        </form>
+        <p class="melding-liten" id="post-melding" role="status"></p>
+        <div class="tabell-ramme"><table class="tabell"><thead><tr><th>Dato</th><th>Hva</th><th>Type</th><th class="r">Beløp</th><th></th></tr></thead>
+        <tbody id="poster"></tbody></table></div>
+      </div>
+    </div>
+  </section>
   <p class="fot">Siden viser bare opptelte tall – ingen telefonnummer, bilder, koder eller steder.</p>
 </main>
 
@@ -207,9 +291,252 @@ function visTall(t) {
     const b = document.createElement('b'); b.textContent = n;
     rad.append(navn, spor, b); return rad;
   }) : [Object.assign(document.createElement('p'), { textContent: 'Ingen funn ennå.', className: 'h' })]));
-  $('sms-maaned').textContent = tall(t.smsMaaned);
-  $('ai-maaned').textContent = t.aiKjent ? tall(t.aiMaaned) : '–';
+  visKost(t.kost);
 }
+
+// ── Fanene ─────────────────────────────────────────────
+function velgFane(navn) {
+  const kost = navn === 'kost';
+  $('fane-oversikt').hidden = kost; $('fane-kost').hidden = !kost;
+  $('fane-knapp-oversikt').setAttribute('aria-selected', String(!kost));
+  $('fane-knapp-kost').setAttribute('aria-selected', String(kost));
+  try { localStorage.setItem('glemmekassen_drift_fane', navn); } catch (e) {}
+}
+$('fane-knapp-oversikt').addEventListener('click', () => velgFane('oversikt'));
+$('fane-knapp-kost').addEventListener('click', () => velgFane('kost'));
+try { if (localStorage.getItem('glemmekassen_drift_fane') === 'kost') velgFane('kost'); } catch (e) {}
+
+// ── Kostnader ──────────────────────────────────────────
+// Løpende kostnad = antall SMS × (Sveve + Claude). Prisene kommer fra serveren (glemmekassen-drift).
+const TYPER = {
+  sms:     { navn: 'SMS (løpende)',      farge: 'var(--k-sms)' },
+  claude:  { navn: 'Claude til koding',  farge: 'var(--k-claude)' },
+  trykk:   { navn: 'Trykk av materiell', farge: 'var(--k-trykk)' },
+  domene:  { navn: 'Domene',             farge: 'var(--k-domene)' },
+  annet:   { navn: 'Annen kostnad',      farge: 'var(--k-annet)' },
+};
+const INNTEKT = { gave: 'Gave', sponsor: 'Sponsor', stotte: 'Støtte', annen_inntekt: 'Annen inntekt' };
+const KOST_REKKEFOLGE = ['sms', 'claude', 'trykk', 'domene', 'annet'];
+const MND = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des'];
+const MND_LANG = ['januar', 'februar', 'mars', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'desember'];
+const kr = n => Math.round(n).toLocaleString('nb-NO') + ' kr';
+const kr2 = n => n.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const osloIDag = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Oslo' }).format(new Date());
+const mndNavn = m => MND[Number(m.slice(5, 7)) - 1];
+let sistKost = null;
+
+// Regner ut alt per måned fra serverens tall (SMS per måned + postene teamet har lagt inn)
+function regnKost(k) {
+  const pris = k.prisSveve + k.prisClaude;
+  const iDag = osloIDag(), denne = iDag.slice(0, 7);
+  const sms = Object.fromEntries(k.maaneder.map(m => [m.maaned, m]));
+  const forste = [denne, ...k.maaneder.filter(m => m.sms > 0).map(m => m.maaned), ...k.poster.map(p => p.dato.slice(0, 7))].sort()[0];
+  const mnd = [];
+  for (let [a, m] = forste.split('-').map(Number); `${a}-${String(m).padStart(2, '0')}` <= denne; m === 12 ? (a++, m = 1) : m++) {
+    const key = `${a}-${String(m).padStart(2, '0')}`;
+    const s = sms[key] || { sms: 0, hjem: 0 };
+    mnd.push({ maaned: key, sms: s.sms, hjem: s.hjem, sms_kr: s.sms * pris, claude: 0, trykk: 0, domene: 0, annet: 0, inntekt: 0 });
+  }
+  const finn = d => mnd.find(x => x.maaned === d.slice(0, 7));
+  for (const p of k.poster) {
+    const rad = finn(p.dato); if (!rad) continue;
+    if (INNTEKT[p.type]) rad.inntekt += p.belop; else if (TYPER[p.type]) rad[p.type] += p.belop;
+  }
+  for (const r of mnd) r.total = KOST_REKKEFOLGE.reduce((s, t) => s + (t === 'sms' ? r.sms_kr : r[t]), 0);
+  // Prognose for denne måneden: samme tempo resten av måneden
+  const dagNr = Number(iDag.slice(8, 10)), dager = new Date(Number(denne.slice(0, 4)), Number(denne.slice(5, 7)), 0).getDate();
+  const naa = mnd[mnd.length - 1];
+  naa.prognose = dagNr >= 3 ? naa.sms_kr / dagNr * dager : null;
+  return { pris, mnd, denne, naa };
+}
+
+function svgEl(svg, navn, attr, tekst) {
+  const n = document.createElementNS('http://www.w3.org/2000/svg', navn);
+  for (const k in attr) n.setAttribute(k, attr[k]);
+  if (tekst != null) n.textContent = tekst;
+  svg.appendChild(n); return n;
+}
+function pentSteg(maks) {
+  const grov = maks / 4, p = Math.pow(10, Math.floor(Math.log10(Math.max(grov, 1))));
+  const steg = [1, 2, 2.5, 5, 10].map(x => x * p).find(x => x >= grov) || p * 10;
+  return { steg, topp: Math.max(steg, Math.ceil(maks / steg) * steg) };
+}
+// Felles søylediagram. serier: [{navn, farge, verdi(rad)}]. stablet = oppå hverandre, ellers side om side.
+function soyler(svg, rader, serier, { stablet = false, prognose = false } = {}) {
+  svg.replaceChildren();
+  const W = 560, H = 250, L = 52, B = 26, T = 18;
+  const totaler = rader.map(r => stablet ? serier.reduce((s, x) => s + x.verdi(r), 0) : Math.max(...serier.map(x => x.verdi(r))));
+  const maks = Math.max(100, ...totaler, ...(prognose ? rader.map(r => r.prognose || 0) : []));
+  const { steg, topp } = pentSteg(maks);
+  for (let v = 0; v <= topp + 0.001; v += steg) {
+    const y = T + (H - T - B) * (1 - v / topp);
+    svgEl(svg, 'line', { x1: L, x2: W, y1: y, y2: y, stroke: '#eee7dc' });
+    svgEl(svg, 'text', { x: L - 8, y: y + 4, 'font-size': 11, fill: '#6a7f98', 'text-anchor': 'end' }, Math.round(v).toLocaleString('nb-NO'));
+  }
+  const bw = (W - L) / rader.length, sk = (H - T - B) / topp, y0 = H - B;
+  const visTall = rader.length <= 8;
+  rader.forEach((r, i) => {
+    const g = svgEl(svg, 'g', {});
+    const sist = i === rader.length - 1;
+    const tittel = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    tittel.textContent = `${MND_LANG[Number(r.maaned.slice(5)) - 1]} ${r.maaned.slice(0, 4)}: ` + serier.map(x => `${x.navn} ${kr(x.verdi(r))}`).join(', ') + (prognose && sist && r.prognose ? ` (prognose ${kr(r.prognose)})` : '');
+    g.appendChild(tittel);
+    svgEl(g, 'rect', { x: L + i * bw, y: T, width: bw, height: H - T - B, fill: 'transparent' });
+    const bredde = Math.min(46, bw * (stablet || serier.length === 1 ? 0.56 : 0.8));
+    const x0 = L + i * bw + (bw - bredde) / 2;
+    if (prognose && sist && r.prognose > serier[0].verdi(r)) {
+      svgEl(g, 'rect', { x: x0 + 1, y: y0 - r.prognose * sk, width: bredde - 2, height: (r.prognose - serier[0].verdi(r)) * sk, rx: 4, fill: 'none', stroke: 'var(--k-sms)', 'stroke-width': 2, 'stroke-dasharray': '5 4' });
+    }
+    if (stablet) {
+      let y = y0; const deler = serier.map(x => [x.verdi(r), x.farge]).filter(d => d[0] > 0);
+      deler.forEach(([v, f], k) => {
+        const h = v * sk, topp = k === deler.length - 1, gap = topp ? 0 : 2, rr = topp ? Math.min(4, h) : 0;
+        if (h - gap > 0.5) svgEl(g, 'path', { d: `M${x0} ${y}V${y - h + gap + rr}q0-${rr} ${rr}-${rr}h${bredde - 2 * rr}q${rr} 0 ${rr} ${rr}V${y}Z`, fill: f });
+        y -= h;
+      });
+    } else {
+      const w = (bredde - (serier.length - 1) * 3) / serier.length;
+      serier.forEach((x, k) => {
+        const h = x.verdi(r) * sk, rr = Math.min(4, h), xx = x0 + k * (w + 3);
+        if (h > 0.5) svgEl(g, 'path', { d: `M${xx} ${y0}V${y0 - h + rr}q0-${rr} ${rr}-${rr}h${w - 2 * rr}q${rr} 0 ${rr} ${rr}V${y0}Z`, fill: x.farge });
+      });
+    }
+    const verdi = totaler[i];
+    if (visTall && verdi > 0) {
+      const yTekst = y0 - Math.max(verdi, prognose && sist && r.prognose ? r.prognose : 0) * sk - 6;
+      svgEl(svg, 'text', { x: L + i * bw + bw / 2, y: yTekst, 'font-size': 11.5, 'font-weight': 800, fill: '#203c61', 'text-anchor': 'middle' }, Math.round(verdi).toLocaleString('nb-NO'));
+    }
+    svgEl(svg, 'text', { x: L + i * bw + bw / 2, y: H - 8, 'font-size': 11, fill: '#6a7f98', 'text-anchor': 'middle' }, mndNavn(r.maaned) + (r.maaned.slice(5) === '01' || i === 0 ? ' ' + r.maaned.slice(2, 4) : ''));
+  });
+}
+
+function settTekst(id, tekst) { $(id).textContent = tekst; }
+function settBelop(id, n) { const b = $(id); b.replaceChildren(Math.round(n).toLocaleString('nb-NO') + ' '); const s = document.createElement('span'); s.textContent = 'kr'; b.append(s); }
+
+function visKost(k) {
+  sistKost = k || null;
+  $('kost-mangler').hidden = !!(k && k.kjent);
+  if (!k || !k.kjent) return;
+  const { pris, mnd, naa } = regnKost(k);
+  const mndTekst = MND_LANG[Number(naa.maaned.slice(5)) - 1];
+  const andreNaa = naa.total - naa.sms_kr;
+  settTekst('k-mnd-tittel', `Kostnad i ${mndTekst}`); settBelop('k-mnd', naa.total);
+  settTekst('k-mnd-tekst', `SMS ${kr(naa.sms_kr)} + andre kostnader ${kr(andreNaa)}`);
+  settTekst('k-lop-tittel', `Løpende kostnad i ${mndTekst}`); settBelop('k-lop', naa.sms_kr);
+  settTekst('k-lop-tekst', `${tall(naa.sms)} SMS × ${kr2(pris)} kr` + (naa.prognose ? ` · prognose hele måneden: ca. ${kr(naa.prognose)}` : ''));
+  const poster = k.poster;
+  const investert = poster.filter(p => TYPER[p.type]).reduce((s, p) => s + p.belop, 0);
+  const inntekter = poster.filter(p => INNTEKT[p.type]).reduce((s, p) => s + p.belop, 0);
+  const totalKost = mnd.reduce((s, r) => s + r.total, 0);
+  const hjem = mnd.reduce((s, r) => s + r.hjem, 0);
+  settBelop('k-inv', investert);
+  settBelop('k-inn', inntekter);
+  const netto = inntekter - totalKost;
+  settTekst('k-inn-tekst', `Netto hittil: ${netto < 0 ? '−' : '+'}${kr(Math.abs(netto))}`);
+  if (hjem) { settBelop('k-plagg', totalKost / hjem); settTekst('k-plagg-tekst', `Totalt ${kr(totalKost)} ÷ ${tall(hjem)} plagg hjem`); }
+  else { $('k-plagg').textContent = '–'; settTekst('k-plagg-tekst', 'Ingen plagg markert som hentet ennå'); }
+
+  const vis = mnd.slice(-12);
+  settTekst('lop-forklaring', `Antall SMS × ${kr2(pris)} kr (Sveve ${kr2(k.prisSveve)} kr + Claude ${kr2(k.prisClaude)} kr)`);
+  soyler($('diagram-lop'), vis, [{ navn: 'Løpende', farge: 'var(--k-sms)', verdi: r => r.sms_kr }], { prognose: true });
+  settTekst('lop-formel', `${mndTekst[0].toUpperCase() + mndTekst.slice(1)}: ${tall(naa.sms)} SMS × ${kr2(pris)} kr = ${kr(naa.sms_kr)} hittil` + (naa.prognose ? ' · stiplet = prognose ut måneden' : ''));
+  const serier = KOST_REKKEFOLGE.map(t => ({ navn: TYPER[t].navn, farge: TYPER[t].farge, verdi: r => t === 'sms' ? r.sms_kr : r[t] }));
+  const iBruk = serier.filter(x => vis.some(r => x.verdi(r) > 0));
+  $('leg-total').replaceChildren(...(iBruk.length ? iBruk : serier.slice(0, 1)).map(x => { const s = document.createElement('span'); const i = document.createElement('i'); i.style.background = x.farge; s.append(i, x.navn); return s; }));
+  soyler($('diagram-total'), vis, serier, { stablet: true });
+  soyler($('diagram-inn'), vis, [{ navn: 'Kostnader', farge: 'var(--k-kost)', verdi: r => r.total }, { navn: 'Inntekter', farge: 'var(--k-inn)', verdi: r => r.inntekt }]);
+
+  // Totalt siden start
+  const sum = Object.fromEntries(KOST_REKKEFOLGE.map(t => [t, mnd.reduce((s, r) => s + (t === 'sms' ? r.sms_kr : r[t]), 0)]));
+  const tot = $('diagram-tot'); tot.replaceChildren();
+  let x = 0;
+  const deler = KOST_REKKEFOLGE.filter(t => sum[t] > 0);
+  deler.forEach((t, i) => { const w = totalKost ? sum[t] / totalKost * 560 : 0; svgEl(tot, 'rect', { x, y: 4, width: Math.max(w - (i < deler.length - 1 ? 2 : 0), 1), height: 34, rx: 4, fill: TYPER[t].farge }).appendChild(Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'title'), { textContent: `${TYPER[t].navn}: ${kr(sum[t])}` })); x += w; });
+  if (!totalKost) svgEl(tot, 'rect', { x: 0, y: 4, width: 560, height: 34, rx: 4, fill: '#f1ece2' });
+  settTekst('tot-forklaring', `Samlet kostnad siden ${MND_LANG[Number(mnd[0].maaned.slice(5)) - 1]} ${mnd[0].maaned.slice(0, 4)}, og hva den går til`);
+  $('tot-rader').replaceChildren(...KOST_REKKEFOLGE.map(t => {
+    const tr = document.createElement('tr');
+    const a = document.createElement('td'); const i = document.createElement('i'); i.style.background = TYPER[t].farge; a.append(i, TYPER[t].navn);
+    const b = document.createElement('td'); b.className = 'r'; b.textContent = kr(sum[t]);
+    const c = document.createElement('td'); c.className = 'r'; c.textContent = totalKost ? Math.round(sum[t] / totalKost * 100) + ' %' : '–';
+    tr.append(a, b, c); return tr;
+  }));
+  const fotRad = (tekst, verdi, klasse) => { const tr = document.createElement('tr'); const a = document.createElement('td'); a.textContent = tekst; const b = document.createElement('td'); b.className = 'r' + (klasse ? ' ' + klasse : ''); b.textContent = verdi; tr.append(a, b, document.createElement('td')); return tr; };
+  $('tot-fot').replaceChildren(fotRad('Totalt kostnader', kr(totalKost)), fotRad('Inntekter', '+' + kr(inntekter), 'inn'), fotRad('Netto', (netto < 0 ? '−' : '+') + kr(Math.abs(netto))));
+
+  // Listen med poster
+  $('poster').replaceChildren(...(poster.length ? poster.map(p => {
+    const tr = document.createElement('tr');
+    const d = document.createElement('td'); d.textContent = new Date(p.dato + 'T12:00:00').toLocaleDateString('nb-NO');
+    const h = document.createElement('td'); h.textContent = p.hva;
+    const t = document.createElement('td');
+    if (INNTEKT[p.type]) { const i = document.createElement('i'); i.style.background = 'var(--k-inn)'; t.append(i, 'Inntekt: ' + INNTEKT[p.type]); }
+    else { const i = document.createElement('i'); i.style.background = (TYPER[p.type] || TYPER.annet).farge; t.append(i, (TYPER[p.type] || TYPER.annet).navn); }
+    const b = document.createElement('td'); b.className = 'r' + (INNTEKT[p.type] ? ' inn' : ''); b.textContent = (INNTEKT[p.type] ? '+' : '') + kr2(p.belop) + ' kr';
+    const s = document.createElement('td'); s.className = 'r';
+    const knapp = document.createElement('button'); knapp.type = 'button'; knapp.className = 'slett'; knapp.textContent = 'Slett';
+    knapp.addEventListener('click', () => slettPost(p.id, knapp));
+    s.appendChild(knapp);
+    tr.append(d, h, t, b, s); return tr;
+  }) : [(() => { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 5; td.className = 'h'; td.textContent = 'Ingen kostnader eller inntekter lagt inn ennå. Legg inn den første over.'; tr.appendChild(td); return tr; })()]));
+}
+
+// Slett: første trykk spør, andre trykk sletter
+async function slettPost(id, knapp) {
+  if (!knapp.classList.contains('bekreft')) {
+    knapp.classList.add('bekreft'); knapp.textContent = 'Trykk igjen for å slette';
+    setTimeout(() => { knapp.classList.remove('bekreft'); knapp.textContent = 'Slett'; }, 4000);
+    return;
+  }
+  knapp.disabled = true;
+  const { ok, status, data } = await kall({ action: 'slett_kostnad', billett: billett(), id });
+  if (status === 401) { lagre(''); visInnlogging('Du må logge inn på nytt.'); return; }
+  if (!ok) { knapp.disabled = false; $('post-melding').className = 'melding-liten'; $('post-melding').textContent = data.error || 'Kunne ikke slette'; return; }
+  $('post-melding').className = 'melding-liten ok'; $('post-melding').textContent = 'Slettet.';
+  await hentTall();
+}
+
+$('post-dato').value = osloIDag();
+$('ny-post').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const m = $('post-melding'); m.className = 'melding-liten'; m.textContent = '';
+  const post = { dato: $('post-dato').value, hva: $('post-hva').value.trim(), type: $('post-type').value, belop: $('post-belop').value.trim() };
+  if (!post.dato) { m.textContent = 'Velg en dato'; return; }
+  if (!post.hva) { m.textContent = 'Skriv hva kostnaden gjelder'; $('post-hva').focus(); return; }
+  if (!post.belop) { m.textContent = 'Skriv et beløp i kroner'; $('post-belop').focus(); return; }
+  $('post-lagre').disabled = true;
+  try {
+    const { ok, status, data } = await kall({ action: 'ny_kostnad', billett: billett(), ...post });
+    if (status === 401) { lagre(''); visInnlogging('Du må logge inn på nytt.'); return; }
+    if (!ok) throw new Error(data.error || 'Kunne ikke lagre');
+    $('post-hva').value = ''; $('post-belop').value = '';
+    m.className = 'melding-liten ok'; m.textContent = 'Lagt til.';
+    await hentTall();
+  } catch (err) {
+    m.textContent = err.message === 'Failed to fetch' ? 'Får ikke kontakt. Sjekk nettet.' : err.message;
+  } finally { $('post-lagre').disabled = false; }
+});
+
+// Regneark: semikolon og komma som desimaltegn, så det åpner riktig i norsk Excel og Numbers
+$('last-ned').addEventListener('click', () => {
+  if (!sistKost || !sistKost.kjent) return;
+  const { pris, mnd } = regnKost(sistKost);
+  const celle = v => { const t = String(v ?? ''); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const tallCelle = n => n ? n.toFixed(2).replace('.', ',') : '';
+  const rader = [['Dato', 'Kategori', 'Beskrivelse', 'Kostnad (kr)', 'Inntekt (kr)']];
+  for (const r of mnd) if (r.sms) rader.push([r.maaned + '-01', 'SMS (løpende)', `${r.sms} SMS × ${kr2(pris)} kr (${MND_LANG[Number(r.maaned.slice(5)) - 1]} ${r.maaned.slice(0, 4)})`, tallCelle(r.sms_kr), '']);
+  for (const p of sistKost.poster) {
+    const inn = !!INNTEKT[p.type];
+    rader.push([p.dato, inn ? 'Inntekt: ' + INNTEKT[p.type] : (TYPER[p.type] || TYPER.annet).navn, p.hva, inn ? '' : tallCelle(p.belop), inn ? tallCelle(p.belop) : '']);
+  }
+  const hode = rader.shift(); rader.sort((a, b) => (a[0] < b[0] ? -1 : 1)); rader.unshift(hode);
+  const tekst = '﻿' + rader.map(r => r.map(celle).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([tekst], { type: 'text/csv;charset=utf-8' }));
+  a.download = `glemmekassen-kostnader-${osloIDag()}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
 
 async function hentTall() {
   if (!billett()) { visInnlogging(''); return; }

@@ -17,7 +17,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 | Global teller | tabellen `counter` + funksjonen `increment_counter` | Supabase | (brukes ikke av appen nå)
 | SMS | serverfunksjonen `glemmekassen-sms` → Sveve | `supabase/functions/glemmekassen-sms` |
 | Lese nummer / gjenkjenne gjenstand | serverfunksjonen `claude-proxy` → Anthropic | `supabase/functions/claude-proxy` |
-| Driftssiden (bare for teamet) | `drift/index.html` + serverfunksjonen `glemmekassen-drift`. Teampassordet ligger som secret `DRIFT_PASSORD`, og `DRIFT_NOKKEL` signerer innloggingen (30 dager). Viser bare opptelte tall | glemmekassen.com/drift |
+| Driftssiden (bare for teamet) | `drift/index.html` + serverfunksjonen `glemmekassen-drift`. Teampassordet ligger som secret `DRIFT_PASSORD`, og `DRIFT_NOKKEL` signerer innloggingen (30 dager). Viser bare opptelte tall. Fanen «Kostnader» viser løpende kostnad (antall SMS × `PRIS_SVEVE_PER_SMS` + `PRIS_CLAUDE_PER_SMS` i `glemmekassen-drift`) og kostnader/inntekter teamet legger inn selv (tabellen `okonomi`). Antall SMS per måned tas vare på i `sms_per_maaned`, så gamle måneder ikke forsvinner når funn slettes. Tabellene lages med `supabase/sql/kostnader.sql` | glemmekassen.com/drift |
 
 ## Faste regler
 

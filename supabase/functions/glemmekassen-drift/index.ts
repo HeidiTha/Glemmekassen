@@ -1,6 +1,9 @@
 // Glemmekassen: tall til driftssiden (glemmekassen.com/drift). Bare for teamet.
 // POST {action:"login", passord}  → { billett }   (billetten varer i 30 dager)
 // POST {action:"tall", billett}    → { tall }      (bare opptelte tall – ingen persondata)
+// POST {action:"ny_kostnad", billett, dato, hva, type, belop} → legger inn en kostnad eller inntekt (fanen «Kostnader»)
+// POST {action:"slett_kostnad", billett, id}                  → sletter en kostnad eller inntekt
+// Tabellene (okonomi og sms_per_maaned) lages med supabase/sql/kostnader.sql.
 // Secrets i Supabase: DRIFT_PASSORD (teampassordet) og DRIFT_NOKKEL (lang tilfeldig tekst som signerer billetten).
 // Bytter dere DRIFT_NOKKEL, blir alle logget ut. Bytter dere DRIFT_PASSORD, virker gamle billetter til de går ut.
 
@@ -13,6 +16,11 @@ const TABLE = "glemmekassen_shortlink_test";
 const MAX_SMS_PER_DAY = 100;
 const MAX_AI_CALLS_PER_DAY = 500;
 const BILLETT_DAGER = 30;
+// Løpende kostnad per SMS som sendes (kroner). Endre her hvis prisene endrer seg.
+const PRIS_SVEVE_PER_SMS = 0.6;   // Sveve, SMS-en
+const PRIS_CLAUDE_PER_SMS = 2.0;  // Claude, lesing av nummer og gjenstand
+const KOSTNAD_TYPER = ["claude", "trykk", "domene", "annet"];
+const INNTEKT_TYPER = ["gave", "sponsor", "stotte", "annen_inntekt"];
 // Grense for feil passord per IP
 const MAX_FEIL_PASSORD = 5;
 const FEIL_VINDU_MS = 15 * 60000;
@@ -67,7 +75,8 @@ async function hentFunn(url: string, h: Record<string, string>, siden: string): 
 async function regnUt(url: string, h: Record<string, string>) {
   const na = Date.now();
   const dag = 86400000;
-  const funn = await hentFunn(url, h, new Date(na - 60 * dag).toISOString());
+  // Funn slettes etter 365 dager, så vi henter alt som finnes
+  const funn = await hentFunn(url, h, new Date(na - 400 * dag).toISOString());
   const tid = (f: Funn) => Date.parse(f.created_at);
   const innen = (fra: number, til = 0) => funn.filter((f) => tid(f) >= na - fra * dag && tid(f) < na - til * dag);
 
@@ -99,8 +108,11 @@ async function regnUt(url: string, h: Record<string, string>) {
   const ai = await fetch(`${url}/rest/v1/ai_bruk?select=dag,antall&dag=gte.${maaned}-01&order=dag.asc`, { headers: h });
   const aiRader = ai.ok ? await ai.json() as { dag: string; antall: number }[] : [];
 
+  const kost = await kostnader(url, h, funn);
+
   return {
     oppdatert: new Date(na).toISOString(),
+    kost,
     smsSiste24t: funn.filter((f) => tid(f) >= na - dag).length,
     maxSms: MAX_SMS_PER_DAY,
     aiIDag: aiRader.find((r) => r.dag === iDagUtc)?.antall ?? 0,
@@ -117,6 +129,67 @@ async function regnUt(url: string, h: Record<string, string>) {
     aiMaaned: aiRader.reduce((s, r) => s + (r.antall || 0), 0),
     aiKjent: ai.ok,
   };
+}
+
+// Antall SMS (= funn) og antall som kom hjem, per måned. Tallene lagres i sms_per_maaned,
+// og vi beholder alltid det høyeste tallet – så måneder eldre enn 365 dager blir stående.
+async function kostnader(url: string, h: Record<string, string>, funn: Funn[]) {
+  const talt: Record<string, { sms: number; hjem: number }> = {};
+  for (const f of funn) {
+    const m = osloDag(new Date(Date.parse(f.created_at))).slice(0, 7);
+    talt[m] ||= { sms: 0, hjem: 0 };
+    talt[m].sms++;
+    if (f.hentet_at) talt[m].hjem++;
+  }
+  const lagret = await fetch(`${url}/rest/v1/sms_per_maaned?select=maaned,sms,hjem&order=maaned.asc`, { headers: h });
+  if (!lagret.ok) {
+    // Tabellene er ikke laget ennå (supabase/sql/kostnader.sql er ikke kjørt)
+    return { kjent: false, prisSveve: PRIS_SVEVE_PER_SMS, prisClaude: PRIS_CLAUDE_PER_SMS, maaneder: [], poster: [] };
+  }
+  const svar = await lagret.json();
+  const rader = (Array.isArray(svar) ? svar : []) as { maaned: string; sms: number; hjem: number }[];
+  const alle: Record<string, { sms: number; hjem: number }> = {};
+  for (const r of rader) alle[r.maaned] = { sms: r.sms, hjem: r.hjem };
+  const oppdater: { maaned: string; sms: number; hjem: number }[] = [];
+  for (const [m, t] of Object.entries(talt)) {
+    const g = alle[m] || { sms: 0, hjem: 0 };
+    const ny = { sms: Math.max(g.sms, t.sms), hjem: Math.max(g.hjem, t.hjem) };
+    if (ny.sms !== g.sms || ny.hjem !== g.hjem) oppdater.push({ maaned: m, ...ny });
+    alle[m] = ny;
+  }
+  if (oppdater.length) {
+    await fetch(`${url}/rest/v1/sms_per_maaned?on_conflict=maaned`, {
+      method: "POST", headers: { ...h, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(oppdater),
+    });
+  }
+  const p = await fetch(`${url}/rest/v1/okonomi?select=id,dato,hva,type,belop&order=dato.desc,created_at.desc&limit=2000`, { headers: h });
+  const poster = p.ok ? (await p.json() as { id: string; dato: string; hva: string; type: string; belop: number | string }[])
+    .map((x) => ({ ...x, belop: Number(x.belop) })) : [];
+  return {
+    kjent: true,
+    prisSveve: PRIS_SVEVE_PER_SMS,
+    prisClaude: PRIS_CLAUDE_PER_SMS,
+    maaneder: Object.entries(alle).sort(([a], [b]) => (a < b ? -1 : 1)).map(([maaned, t]) => ({ maaned, ...t })),
+    poster,
+  };
+}
+
+// Sjekker en ny kostnad fra skjemaet. Gir feilmelding som tekst, eller den rensede kostnaden.
+function sjekkKostnad(b: Record<string, unknown>): string | { dato: string; hva: string; type: string; belop: number } {
+  const dato = String(b.dato ?? "");
+  const tid = Date.parse(dato + "T12:00:00Z");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dato) || isNaN(tid) || new Date(tid).toISOString().slice(0, 10) !== dato) return "Velg en dato";
+  if (dato < "2024-01-01" || Date.parse(dato) > Date.now() + 366 * 86400000) return "Datoen ser feil ut";
+  const hva = String(b.hva ?? "").trim().replace(/\s+/g, " ");
+  if (!hva) return "Skriv hva kostnaden gjelder";
+  if (hva.length > 80) return "Beskrivelsen kan ha maks 80 tegn";
+  const type = String(b.type ?? "");
+  if (!KOSTNAD_TYPER.includes(type) && !INNTEKT_TYPER.includes(type)) return "Velg type";
+  const belop = Math.round(Number(String(b.belop ?? "").replace(/\s/g, "").replace(",", ".")) * 100) / 100;
+  if (!Number.isFinite(belop) || belop <= 0) return "Skriv et beløp i kroner";
+  if (belop > 1000000) return "Beløpet er for stort";
+  return { dato, hva, type, belop };
 }
 
 Deno.serve(async (req) => {
@@ -146,6 +219,23 @@ Deno.serve(async (req) => {
     if (body.action === "tall") {
       if (!(await gyldigBillett(nokkel, body.billett))) return json({ error: "Logg inn på nytt" }, 401);
       return json({ tall: await regnUt(url, h) });
+    }
+
+    if (body.action === "ny_kostnad" || body.action === "slett_kostnad") {
+      if (!(await gyldigBillett(nokkel, body.billett))) return json({ error: "Logg inn på nytt" }, 401);
+      const hj = { ...h, "Content-Type": "application/json", Prefer: "return=minimal" };
+      if (body.action === "ny_kostnad") {
+        const k = sjekkKostnad(body);
+        if (typeof k === "string") return json({ error: k }, 400);
+        const r = await fetch(`${url}/rest/v1/okonomi`, { method: "POST", headers: hj, body: JSON.stringify(k) });
+        if (!r.ok) return json({ error: "Kunne ikke lagre. Er supabase/sql/kostnader.sql kjørt?" }, 502);
+        return json({ ok: true });
+      }
+      const id = String(body.id ?? "");
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ error: "Ugyldig kostnad" }, 400);
+      const r = await fetch(`${url}/rest/v1/okonomi?id=eq.${id}`, { method: "DELETE", headers: hj });
+      if (!r.ok) return json({ error: "Kunne ikke slette" }, 502);
+      return json({ ok: true });
     }
     return json({ error: "Ugyldig handling" }, 400);
   } catch (e) {
