@@ -951,6 +951,26 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
 @media(max-height:650px){.place-nav{position:fixed;bottom:12px;margin-top:0}}
 /* Hjemskjerm-knappen: stegene vises først når man trykker */
 .hjem-tips-steg.fremhevet{outline:3px solid #f5bd3f;}
+/* Veiledning for hjemskjermen (iPhone og nettlesere uten «Installer»-vindu) */
+.hjem-guide{position:fixed;inset:0;z-index:1000;background:rgba(10,22,40,.72);display:flex;flex-direction:column;justify-content:flex-end;padding:16px 16px calc(96px + env(safe-area-inset-bottom));}
+.hjem-guide[hidden]{display:none;}
+.hjem-guide.topp{justify-content:flex-start;padding-top:calc(96px + env(safe-area-inset-top));padding-bottom:16px;}
+.hjem-guide-kort{position:relative;background:#f5f0e6;color:#203c61;border-radius:22px;padding:20px 18px 16px;max-width:420px;width:100%;margin:0 auto;box-shadow:0 12px 40px rgba(0,0,0,.35);}
+.hjem-guide-kort h3{font-size:19px;font-weight:850;margin:0 36px 12px 0;line-height:1.25;}
+.hjem-guide-lukk{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:50%;border:0;background:#fff;color:#203c61;font-size:16px;font-weight:800;cursor:pointer;}
+.hjem-guide-steg{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.hjem-guide-steg li{display:flex;align-items:center;gap:12px;background:#fff;border-radius:14px;padding:10px 12px;font-size:15px;line-height:1.35;}
+.hg-ikon{flex:0 0 40px;height:40px;border-radius:11px;background:#e9eef4;color:#203c61;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.hg-ikon.hg-blaa{background:#e5f0ff;color:#0a7cff;}
+.hg-ikon.hg-gull{background:#f5bd3f;color:#17345c;}
+.hjem-guide-merk{margin:10px 2px 0;font-size:13px;line-height:1.45;color:#405b7d;}
+.hjem-guide-pil{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);color:#f5bd3f;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));}
+.hjem-guide-pil.hoyre{left:auto;right:14px;transform:none;}
+.hjem-guide.topp .hjem-guide-pil{bottom:auto;top:calc(14px + env(safe-area-inset-top));}
+.hjem-guide.topp .hjem-guide-pil svg{transform:rotate(180deg);}
+@media(prefers-reduced-motion:no-preference){.hjem-guide-pil svg{animation:hg-hopp 1s ease-in-out infinite;}.hjem-guide.topp .hjem-guide-pil svg{animation-name:hg-hopp-opp;}}
+@keyframes hg-hopp{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+@keyframes hg-hopp-opp{0%,100%{transform:rotate(180deg) translateY(0)}50%{transform:rotate(180deg) translateY(8px)}}
 </style>
 </head>
 <body>
@@ -1163,8 +1183,6 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
         </div>
       </div>
       <button type="button" class="hjem-tips-knapp" id="hjem-tips-legg-til">Legg til på hjemskjermen</button>
-      <p class="hjem-tips-steg" id="hjem-tips-ios" hidden>Trykk <b>Del</b>-knappen <span class="hjem-tips-del" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span> nederst i Safari (på nyere iPhone ligger den under <b>⋯</b>). Velg så <b>«Legg til på Hjem-skjerm»</b> og trykk <b>Legg til</b>.</p>
-      <p class="hjem-tips-steg" id="hjem-tips-android" hidden>Trykk <b>⋮</b> øverst i nettleseren og velg <b>«Installer app»</b> eller <b>«Legg til på startskjermen»</b>.</p>
       <button type="button" class="hjem-tips-nei" id="hjem-tips-nei">Nei takk</button>
     </div>
     <div class="thanks-bottom">Vil du hjelpe noe hjem?</div>
@@ -1174,6 +1192,21 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
 
 <!-- Konfig fjernet – Sveve-nøkler ligger i Supabase -->
 
+
+<!-- Veiledning for telefoner som ikke lar nettsider legge seg selv på hjemskjermen (iPhone m.fl.) -->
+<div class="hjem-guide" id="hjem-guide" hidden role="dialog" aria-modal="true" aria-labelledby="hjem-guide-tittel">
+  <div class="hjem-guide-kort">
+    <button type="button" class="hjem-guide-lukk" id="hjem-guide-lukk" aria-label="Lukk">✕</button>
+    <h3 id="hjem-guide-tittel">Legg Glemmekassen på hjemskjermen</h3>
+    <ol class="hjem-guide-steg">
+      <li><span class="hg-ikon hg-blaa" id="hg-ikon-1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span><span id="hg-tekst-1">Trykk på <b>Del</b>-knappen nederst</span></li>
+      <li><span class="hg-ikon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg></span><span id="hg-tekst-2">Velg <b>«Legg til på Hjem-skjerm»</b></span></li>
+      <li><span class="hg-ikon hg-gull"><b>OK</b></span><span id="hg-tekst-3">Trykk <b>Legg til</b> øverst til høyre</span></li>
+    </ol>
+    <p class="hjem-guide-merk" id="hjem-guide-merk" hidden></p>
+  </div>
+  <div class="hjem-guide-pil" id="hjem-guide-pil" aria-hidden="true"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M5.5 12.5 12 19l6.5-6.5"/></svg></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2038,9 +2071,7 @@ function visHjemTips(antall) {
   boks.hidden = !vis;
   document.getElementById('success-screen').classList.toggle('med-tips', vis);
   if (!vis) return;
-  // Knappen vises alltid. Stegene vises først når man trykker og telefonen ikke kan legge den til selv.
-  document.getElementById('hjem-tips-ios').hidden = true;
-  document.getElementById('hjem-tips-android').hidden = true;
+  // Knappen vises alltid. Kan ikke telefonen legge appen til selv, viser knappen en kort veiledning (visHjemGuide).
 }
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('hjem-tips-nei').addEventListener('click', () => {
@@ -2049,20 +2080,64 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('success-screen').classList.remove('med-tips');
   });
   document.getElementById('hjem-tips-legg-til').addEventListener('click', async () => {
-    if (!installDialog) {
-      // iPhone og noen Android-nettlesere lar ikke nettsider legge seg selv på hjemskjermen. Da viser vi hvordan.
-      const iphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const steg = document.getElementById(iphone ? 'hjem-tips-ios' : 'hjem-tips-android');
-      steg.hidden = false; steg.classList.add('fremhevet');
-      steg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
+    // iPhone og noen Android-nettlesere lar ikke nettsider legge seg selv på hjemskjermen. Da viser vi en kort veiledning.
+    if (!installDialog) { visHjemGuide(); return; }
     installDialog.prompt();
     try { await installDialog.userChoice; } catch (e) {}
     installDialog = null;
     document.getElementById('hjem-tips').hidden = true;
     document.getElementById('success-screen').classList.remove('med-tips');
   });
+});
+
+// Veiledningen tilpasses nettleseren, og pilen peker dit knappen faktisk er
+function visHjemGuide() {
+  const ua = navigator.userAgent;
+  const iphone = /iPhone|iPad|iPod/i.test(ua);
+  const annenIosNettleser = iphone && /CriOS|FxiOS|EdgiOS/i.test(ua); // Chrome, Firefox, Edge på iPhone
+  const innebygd = /Instagram|FBAN|FBAV|FB_IAB|Messenger|Snapchat|TikTok|LinkedInApp/i.test(ua); // nettleseren inne i en app
+  const safariVersjon = parseInt((ua.match(/Version\/(\d+)/) || [])[1] || '0', 10);
+  const g = document.getElementById('hjem-guide'), pil = document.getElementById('hjem-guide-pil');
+  const merk = document.getElementById('hjem-guide-merk');
+  const t1 = document.getElementById('hg-tekst-1'), t2 = document.getElementById('hg-tekst-2'), t3 = document.getElementById('hg-tekst-3');
+  g.classList.remove('topp'); pil.classList.remove('hoyre'); pil.hidden = false; merk.hidden = true;
+  if (innebygd) {
+    t1.innerHTML = 'Trykk <b>⋯</b> eller <b>⋮</b> øverst i hjørnet';
+    t2.innerHTML = iphone ? 'Velg <b>«Åpne i Safari»</b>' : 'Velg <b>«Åpne i nettleser»</b>';
+    t3.innerHTML = 'Trykk den gule knappen <b>«Legg til på hjemskjermen»</b> igjen der';
+    g.classList.add('topp'); pil.classList.add('hoyre');
+  } else if (iphone && !annenIosNettleser) {
+    if (safariVersjon >= 26) {
+      // Nyere Safari: Del ligger under ⋯ nederst til høyre
+      t1.innerHTML = 'Trykk <b>⋯</b> nederst til høyre, og så <b>Del</b>';
+      pil.classList.add('hoyre');
+    } else {
+      t1.innerHTML = 'Trykk på <b>Del</b>-knappen nederst på skjermen';
+    }
+    t2.innerHTML = 'Bla litt ned og velg <b>«Legg til på Hjem-skjerm»</b>';
+    t3.innerHTML = 'Trykk <b>Legg til</b> øverst til høyre';
+    merk.textContent = 'Ser du ikke Del-knappen? Trykk nederst på skjermen, så kommer menyen fram.';
+    merk.hidden = false;
+  } else if (annenIosNettleser) {
+    t1.innerHTML = 'Trykk på <b>Del</b>-knappen øverst til høyre, ved adressefeltet';
+    t2.innerHTML = 'Bla litt ned og velg <b>«Legg til på Hjem-skjerm»</b>';
+    t3.innerHTML = 'Trykk <b>Legg til</b>';
+    g.classList.add('topp'); pil.classList.add('hoyre');
+  } else {
+    // Android-nettlesere uten eget «Installer»-vindu (f.eks. Firefox)
+    t1.innerHTML = 'Trykk <b>⋮</b> øverst til høyre i nettleseren';
+    t2.innerHTML = 'Velg <b>«Installer»</b> eller <b>«Legg til på startskjermen»</b>';
+    t3.innerHTML = 'Trykk <b>Legg til</b>';
+    g.classList.add('topp'); pil.classList.add('hoyre');
+  }
+  g.hidden = false;
+  document.getElementById('hjem-guide-lukk').focus();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const g = document.getElementById('hjem-guide');
+  document.getElementById('hjem-guide-lukk').addEventListener('click', () => { g.hidden = true; });
+  g.addEventListener('click', (e) => { if (e.target === g) g.hidden = true; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') g.hidden = true; });
 });
 
 // Viser sist kjente tall med en gang, og oppdaterer når serveren svarer
