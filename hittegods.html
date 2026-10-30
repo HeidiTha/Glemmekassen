@@ -926,6 +926,31 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
 .thanks-bottom{color:#f5bd3f;font-size:13px;font-weight:700;margin:19px 0 0;}
 @media(min-width:600px){#success-screen.thanks-design{margin-left:0;margin-right:0;border-radius:4px;}}
 
+
+/* Kompakt toppfelt og fremdrift, så første side får plass uten scrolling på små Android-telefoner */
+.design-header{padding:12px 20px 8px!important;}
+.design-header .official-logo{width:38px;height:38px;}
+.design-progress{gap:4px;margin:2px 20px 12px!important;}
+.progress-stage{flex-direction:row;justify-content:center;gap:5px;font-size:13px;}
+.design-progress .progress-number{height:24px;width:24px;font-size:13px;border-width:2px;}
+#phone-input::placeholder{font-size:20px;font-weight:650;letter-spacing:0;color:#8193a8;opacity:1;}
+/* «Hvor fant du det?» får plass uten scrolling på små skjermer */
+@media(max-height:800px){
+#step-3.place-screen{padding-top:0!important;padding-bottom:90px;min-height:0;margin-top:0!important}
+#step-3 .place-title{margin-top:0}
+.place-title{font-size:26px;margin:2px 0 4px}
+.place-subtitle{font-size:15px;margin:0 0 12px}
+.place-location{min-height:0;padding:10px 12px;margin-bottom:12px;border-radius:18px}
+.place-pin{width:42px;height:42px;flex-basis:42px;border-radius:12px}
+.place-location .loc-value{font-size:15px}
+#gps-fallback{margin:-4px 0 12px!important}
+.place-field-label{font-size:16px;margin:0 0 6px;display:block}
+.place-input{min-height:48px;padding:10px 13px;margin-bottom:12px}
+.place-nav .nav-next{padding:15px 12px}
+}
+@media(max-height:650px){.place-nav{position:fixed;bottom:12px;margin-top:0}}
+/* Hjemskjerm-knappen: stegene vises først når man trykker */
+.hjem-tips-steg.fremhevet{outline:3px solid #f5bd3f;}
 </style>
 </head>
 <body>
@@ -997,7 +1022,7 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
     <div class="confirm-panel">
       <div class="field" id="phone-field">
         <label for="phone-input">Telefonnummer</label>
-        <input type="tel" id="phone-input" placeholder="404 51 530" inputmode="tel" autocomplete="off" oninput="liveValidatePhone(this)">
+        <input type="tel" id="phone-input" placeholder="Skriv nummeret her" inputmode="tel" autocomplete="off" oninput="liveValidatePhone(this)">
         <div class="confirm-help" id="confirm-help">Feil? Trykk på nummeret og rett det.</div>
         <div id="phone-hint" style="font-size:13px; margin-top:8px; min-height:20px;"></div>
       </div>
@@ -1064,9 +1089,6 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
     <h2 class="place-title">Hvor fant du det?</h2>
     <p class="place-subtitle">Så eieren vet hvor de kan hente det.</p>
 
-    <label class="place-field-label" for="address-input">Sted</label>
-    <input type="text" id="address-input" class="place-input" placeholder="Skriv adresse eller skole" autocomplete="street-address">
-
     <div class="place-location" id="location-row">
       <div class="place-pin" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.7"/></svg></div>
       <div class="place-location-text">
@@ -1075,7 +1097,11 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
       </div>
       <div class="location-spinner" id="loc-spinner"></div>
     </div>
-    <div id="gps-fallback" style="display:none; margin:-10px 0 20px; padding:12px; border-radius:12px; background:#fff2da; color:#203c61; font-size:13px;">Posisjonen er ikke tilgjengelig. Skriv adressen eller skolen i feltet over.</div>
+    <div id="gps-fallback" style="display:none; margin:-10px 0 20px; padding:12px; border-radius:12px; background:#fff2da; color:#203c61; font-size:13px;">Posisjonen er ikke tilgjengelig. Skriv adressen eller skolen i feltet under.</div>
+
+    <label class="place-field-label" for="address-input">Sted</label>
+    <input type="text" id="address-input" class="place-input" placeholder="Skriv inn sted her" autocomplete="street-address">
+
 
     <label class="place-field-label" for="place-input">Hvor nøyaktig? <span>(valgfritt)</span></label>
     <input type="text" id="place-input" class="place-input" placeholder="F.eks. lekeplassen, 1. klasse-gangen" autocomplete="off">
@@ -1136,9 +1162,9 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
           <div class="hjem-tips-tekst">Da åpner den som en vanlig app – raskere neste gang du finner noe.</div>
         </div>
       </div>
-      <button type="button" class="hjem-tips-knapp" id="hjem-tips-legg-til" hidden>Legg til på hjemskjermen</button>
-      <p class="hjem-tips-steg" id="hjem-tips-ios" hidden>Trykk <b>Del</b> <span class="hjem-tips-del" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span> og velg <b>«Legg til på Hjem-skjerm»</b></p>
-      <p class="hjem-tips-steg" id="hjem-tips-android" hidden>Trykk <b>⋮</b> i nettleseren og velg <b>«Installer app»</b> eller <b>«Legg til på startskjermen»</b></p>
+      <button type="button" class="hjem-tips-knapp" id="hjem-tips-legg-til">Legg til på hjemskjermen</button>
+      <p class="hjem-tips-steg" id="hjem-tips-ios" hidden>Trykk <b>Del</b>-knappen <span class="hjem-tips-del" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span> nederst i Safari (på nyere iPhone ligger den under <b>⋯</b>). Velg så <b>«Legg til på Hjem-skjerm»</b> og trykk <b>Legg til</b>.</p>
+      <p class="hjem-tips-steg" id="hjem-tips-android" hidden>Trykk <b>⋮</b> øverst i nettleseren og velg <b>«Installer app»</b> eller <b>«Legg til på startskjermen»</b>.</p>
       <button type="button" class="hjem-tips-nei" id="hjem-tips-nei">Nei takk</button>
     </div>
     <div class="thanks-bottom">Vil du hjelpe noe hjem?</div>
@@ -1153,17 +1179,12 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
 <script>
 
 // Steget «Hvor fant du det?» har tre deler:
-//   1. «Sted» – adresse eller skole som brukeren skriver selv (huskes til neste gang)
-//   2. «Din posisjon nå» – hentes automatisk med GPS og gir kartet i SMS-en
+//   1. «Din posisjon nå» – hentes automatisk med GPS og gir kartet i SMS-en
+//   2. «Sted» – adresse eller skole som brukeren skriver selv (tomt hver gang)
 //   3. «Hvor nøyaktig?» – f.eks. lekeplassen eller 1. klasse-gangen
 let manualLocationOverride = false; // brukes av GPS-koden; er alltid false nå
-const STED_KEY = 'glemmekassen_sted';
-function husketSted() {
-  try { return localStorage.getItem(STED_KEY) || ''; } catch(e) { return ''; }
-}
-function huskSted(tekst) {
-  try { tekst ? localStorage.setItem(STED_KEY, tekst) : localStorage.removeItem(STED_KEY); } catch(e) {}
-}
+// Stedet huskes ikke: feltet er tomt hver gang. Fjern det gamle stedet fra eldre versjoner av appen.
+try { localStorage.removeItem('glemmekassen_sted'); } catch(e) {}
 
 // Lager en lesbar adresse fra kartoppslaget, f.eks. «Smestad skole, Smestadveien 2, Oslo».
 // Gir tom tekst hvis det ikke finnes noen adresse – da vises aldri koordinater.
@@ -1178,7 +1199,7 @@ function gpsAdresseFra(geo) {
 function refreshLocationForNewScan() {
   manualLocationOverride = false;
   state.lat = null; state.lng = null; state.locationText = ''; state.gpsAdresse = ''; state.placeName = '';
-  document.getElementById('address-input').value = husketSted();
+  document.getElementById('address-input').value = '';
   document.getElementById('place-input').value = '';
   document.getElementById('gps-fallback').style.display = 'none';
   document.getElementById('location-row').classList.remove('has-location');
@@ -1801,7 +1822,6 @@ function goToSummary() {
   // Kartet i SMS-en kommer alltid fra GPS (state.lat/state.lng) når den finnes.
   const adresse = document.getElementById('address-input').value.trim();
   state.locationText = adresse || state.gpsAdresse || '';
-  huskSted(adresse);
   state.placeName = document.getElementById('place-input').value.trim();
   state.itemType = document.getElementById('item-type').value;
 
@@ -2014,13 +2034,13 @@ function visHjemTips(antall) {
   const iphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const mobil = iphone || /Android/i.test(navigator.userAgent);
   // Vises på alle mobiler. Har telefonen en egen «Installer»-dialog, får man en knapp – ellers stegene.
-  const vis = antall >= 2 && !sagtNei && !erPaaHjemskjermen() && (installDialog || mobil);
+  const vis = antall >= 1 && !sagtNei && !erPaaHjemskjermen() && (installDialog || mobil);
   boks.hidden = !vis;
   document.getElementById('success-screen').classList.toggle('med-tips', vis);
   if (!vis) return;
-  document.getElementById('hjem-tips-legg-til').hidden = !installDialog;
-  document.getElementById('hjem-tips-ios').hidden = !!installDialog || !iphone;
-  document.getElementById('hjem-tips-android').hidden = !!installDialog || iphone;
+  // Knappen vises alltid. Stegene vises først når man trykker og telefonen ikke kan legge den til selv.
+  document.getElementById('hjem-tips-ios').hidden = true;
+  document.getElementById('hjem-tips-android').hidden = true;
 }
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('hjem-tips-nei').addEventListener('click', () => {
@@ -2029,7 +2049,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('success-screen').classList.remove('med-tips');
   });
   document.getElementById('hjem-tips-legg-til').addEventListener('click', async () => {
-    if (!installDialog) return;
+    if (!installDialog) {
+      // iPhone og noen Android-nettlesere lar ikke nettsider legge seg selv på hjemskjermen. Da viser vi hvordan.
+      const iphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const steg = document.getElementById(iphone ? 'hjem-tips-ios' : 'hjem-tips-android');
+      steg.hidden = false; steg.classList.add('fremhevet');
+      steg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
     installDialog.prompt();
     try { await installDialog.userChoice; } catch (e) {}
     installDialog = null;
