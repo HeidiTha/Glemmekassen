@@ -23,6 +23,8 @@ label{position:absolute;left:-9999px}
 .feil{color:#a13a1c;font-weight:700;font-size:15px;line-height:1.4;margin:12px 0 0;min-height:1.4em}
 .trygg{display:flex;gap:9px;align-items:flex-start;background:#fff;border:2px solid var(--line);border-radius:16px;padding:14px 16px;margin-top:16px;font-size:14px;line-height:1.45}
 details{margin-top:18px;text-align:center}
+.bokstaver{display:block;margin:8px auto 0;padding:6px 10px;background:none;border:0;color:var(--muted);font:inherit;font-size:13px;font-weight:650;text-decoration:underline;cursor:pointer}
+#kode::placeholder{letter-spacing:0;font-size:20px;text-transform:none;font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif}
 summary{cursor:pointer;text-decoration:underline;font-weight:650;color:var(--muted);list-style:none}
 summary::-webkit-details-marker{display:none}
 details p{text-align:left;background:#fff;border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.5;margin:10px 0 0}
@@ -34,7 +36,8 @@ details p{text-align:left;background:#fff;border-radius:14px;padding:14px 16px;f
 
 <form id="skjema" novalidate>
   <label for="kode">Koden fra SMS-en</label>
-  <input id="kode" name="kode" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="8" placeholder="K7M4Q2" required>
+  <input id="kode" name="kode" type="text" inputmode="numeric" autocomplete="one-time-code" autofocus autocapitalize="characters" spellcheck="false" maxlength="8" placeholder="6 siffer" required>
+  <button type="button" class="bokstaver" id="bokstaver">Har koden bokstaver? Trykk her</button>
   <button class="btn" id="knapp" type="submit">Se funnet</button>
   <p class="feil" id="feil" role="alert"></p>
 </form>
@@ -43,21 +46,37 @@ details p{text-align:left;background:#fff;border-radius:14px;padding:14px 16px;f
 
 <details>
   <summary>Hvor finner jeg koden?</summary>
-  <p>Koden står i SMS-en fra <strong>GlemmeKasse</strong>. Den har 6 tegn – bokstaver og tall, for eksempel <strong>K7M4Q2</strong>. Store eller små bokstaver spiller ingen rolle.</p>
+  <p>Koden står i SMS-en fra <strong>GlemmeKasse</strong>. Den har 6 siffer, for eksempel <strong>482915</strong>. Trykk i feltet, så foreslår telefonen ofte koden over tastaturet. Eldre SMS-er har koder med bokstaver, for eksempel <strong>K7M4Q2</strong> – de virker også.</p>
 </details>
 </main><script>
 const API = 'https://jyajkriknplrhsxustpf.supabase.co/functions/v1/glemmekassen-sms';
 const felt = document.getElementById('kode'), feil = document.getElementById('feil'), knapp = document.getElementById('knapp');
 const rens = v => v.toUpperCase().replace(/[\s-]/g, '');
-// Lenke som glemmekassen.com/kode/?k=K7M4Q2 fyller inn koden
-const fraLenke = new URLSearchParams(location.search).get('k');
-if (fraLenke) felt.value = rens(fraLenke).slice(0, 6);
-felt.addEventListener('input', () => { feil.textContent = ''; });
+const gyldig = k => /^[0-9]{6}$/.test(k) || /^[A-Z0-9]{6}$/.test(k);
+// Eldre koder har bokstaver: da bytter vi til vanlig tastatur
+document.getElementById('bokstaver').addEventListener('click', () => {
+  felt.setAttribute('inputmode', 'text'); felt.blur(); setTimeout(() => felt.focus(), 50);
+  document.getElementById('bokstaver').hidden = true;
+});
+felt.addEventListener('input', () => {
+  feil.textContent = '';
+  const k = rens(felt.value);
+  // Når hele koden er limt inn eller valgt fra tastaturet, går vi videre av oss selv
+  if (/^[0-9]{6}$/.test(k)) sendInn();
+});
+// En lenke som glemmekassen.com/kode/?k=482915 fyller inn koden og åpner funnet direkte (SMS-en bruker den ikke)
+const fraLenke = rens(new URLSearchParams(location.search).get('k') || '').slice(0, 6);
+if (fraLenke) {
+  felt.value = fraLenke;
+  if (gyldig(fraLenke)) setTimeout(() => sendInn(), 0);
+}
 
+const sendInn = () => document.getElementById('skjema').dispatchEvent(new Event('submit', { cancelable: true }));
 document.getElementById('skjema').addEventListener('submit', async (e) => {
   e.preventDefault();
   const kode = rens(felt.value);
-  if (!/^[A-Z0-9]{6}$/.test(kode)) { feil.textContent = 'Koden har 6 tegn, for eksempel K7M4Q2.'; felt.focus(); return; }
+  if (!gyldig(kode)) { feil.textContent = 'Koden har 6 siffer, for eksempel 482915.'; felt.focus(); return; }
+  if (knapp.disabled) return;
   knapp.disabled = true; knapp.textContent = 'Leter …';
   try {
     const res = await fetch(API + '?kode=' + encodeURIComponent(kode), { cache: 'no-store' });

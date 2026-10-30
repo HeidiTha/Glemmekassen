@@ -38,7 +38,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 - Bilder og funn slettes automatisk etter 365 dager (`KEEP_DAYS`). Oppryddingen kjøres hver gang en SMS sendes.
 - Bare norske mobilnummer (8 siffer, starter med 4 eller 9).
 - Driftssiden: maks 5 feil passord per 15 minutter per IP. Grensene `MAX_SMS_PER_DAY` og `MAX_AI_CALLS_PER_DAY` står også i `glemmekassen-drift` – endre alle stedene samtidig. Driftssiden skal aldri vise telefonnummer, bilder, koder eller steder for enkeltfunn.
-- Koden er 6 tegn uten 0/O og 1/I/L. Maks 10 feil koder per time per IP (`MAX_FEIL_KODER_PER_TIME`), så ingen kan prøve seg fram til andres funn.
+- Koden er 6 siffer (f.eks. 482915), så iPhone og Android kan foreslå den på tastaturet. Kodefeltet på `kode/index.html` har `autocomplete="one-time-code"` og `inputmode="numeric"`, så telefonen foreslår koden når eieren trykker i feltet. Lenken i SMS-en er bare glemmekassen.com/kode, uten koden – det virker tryggere. Eldre koder med bokstaver (f.eks. K7M4Q2) virker fortsatt. Maks 10 feil koder per time per IP (`MAX_FEIL_KODER_PER_TIME`), så ingen kan prøve seg fram til andres funn.
 - SMS-teksten har ingen emoji, og avsendernavnet er `GlemmeKasse` (Sveve tillater maks 11 tegn). Uten emoji får hver SMS-del plass til 153 tegn i stedet for 67, og det blir billigere.
 
 ## Endre en serverfunksjon
