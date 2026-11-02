@@ -2,6 +2,7 @@
 // POST {action:"login", passord}  → { billett }   (billetten varer i 30 dager)
 // POST {action:"tall", billett}    → { tall }      (bare opptelte tall – ingen persondata)
 // POST {action:"ny_kostnad", billett, dato, hva, type, belop} → legger inn en kostnad eller inntekt (fanen «Kostnader»)
+// POST {action:"endre_type", billett, id, type}               → bytter type på en kostnad eller inntekt
 // POST {action:"slett_kostnad", billett, id}                  → sletter en kostnad eller inntekt
 // Tabellene (okonomi og sms_per_maaned) lages med supabase/sql/kostnader.sql.
 // Secrets i Supabase: DRIFT_PASSORD (teampassordet) og DRIFT_NOKKEL (lang tilfeldig tekst som signerer billetten).
@@ -19,7 +20,9 @@ const BILLETT_DAGER = 30;
 // Løpende kostnad per SMS som sendes (kroner). Endre her hvis prisene endrer seg.
 const PRIS_SVEVE_PER_SMS = 0.6;   // Sveve, SMS-en
 const PRIS_CLAUDE_PER_SMS = 2.0;  // Claude, lesing av nummer og gjenstand
-const KOSTNAD_TYPER = ["claude", "trykk", "domene", "annet"];
+const KOSTNAD_TYPER = ["sveve", "claude", "domene", "annet"];
+// Løpende kostnad (SMS × pris) telles fra og med denne måneden. Tidligere SMS var testing.
+const LOPENDE_KOSTNAD_FRA = "2026-11";
 const INNTEKT_TYPER = ["gave", "sponsor", "stotte", "annen_inntekt"];
 // Grense for feil passord per IP
 const MAX_FEIL_PASSORD = 5;
@@ -83,14 +86,6 @@ async function regnUt(url: string, h: Record<string, string>) {
   const siste30 = innen(30), forrige30 = innen(60, 30), siste7 = innen(7);
   const hjem30 = siste30.filter((f) => f.hentet_at).length;
 
-  // Per dag siste 14 dager (norsk dato)
-  const perDag: { dag: string; funn: number; hjem: number }[] = [];
-  for (let i = 13; i >= 0; i--) perDag.push({ dag: osloDag(new Date(na - i * dag)), funn: 0, hjem: 0 });
-  for (const f of innen(15)) {
-    const rad = perDag.find((p) => p.dag === osloDag(new Date(tid(f))));
-    if (rad) { rad.funn++; if (f.hentet_at) rad.hjem++; }
-  }
-
   // Hva som blir funnet (siste 30 dager)
   const typer: Record<string, number> = {};
   for (const f of siste30) typer[f.gjenstand || "annet"] = (typer[f.gjenstand || "annet"] || 0) + 1;
@@ -108,7 +103,17 @@ async function regnUt(url: string, h: Record<string, string>) {
   const ai = await fetch(`${url}/rest/v1/ai_bruk?select=dag,antall&dag=gte.${maaned}-01&order=dag.asc`, { headers: h });
   const aiRader = ai.ok ? await ai.json() as { dag: string; antall: number }[] : [];
 
-  const kost = await kostnader(url, h, funn);
+  // Meldinger (SMS) og hvor mange som kom hjem, per måned. Lagres i sms_per_maaned når tabellen finnes.
+  const talt: Record<string, { sms: number; hjem: number }> = {};
+  for (const f of funn) {
+    const m = osloDag(new Date(tid(f))).slice(0, 7);
+    talt[m] ||= { sms: 0, hjem: 0 };
+    talt[m].sms++;
+    if (f.hentet_at) talt[m].hjem++;
+  }
+  const kost = await kostnader(url, h, talt);
+  const perMaaned = kost.kjent ? kost.maaneder
+    : Object.entries(talt).sort(([a], [b]) => (a < b ? -1 : 1)).map(([maaned, t]) => ({ maaned, ...t }));
 
   return {
     oppdatert: new Date(na).toISOString(),
@@ -123,7 +128,7 @@ async function regnUt(url: string, h: Record<string, string>) {
     hjem30,
     andelHjem: siste30.length ? Math.round((hjem30 / siste30.length) * 100) : null,
     medianTimerTilHentet: median === null ? null : Math.round(median * 10) / 10,
-    perDag,
+    perMaaned,
     typer,
     smsMaaned,
     aiMaaned: aiRader.reduce((s, r) => s + (r.antall || 0), 0),
@@ -133,18 +138,11 @@ async function regnUt(url: string, h: Record<string, string>) {
 
 // Antall SMS (= funn) og antall som kom hjem, per måned. Tallene lagres i sms_per_maaned,
 // og vi beholder alltid det høyeste tallet – så måneder eldre enn 365 dager blir stående.
-async function kostnader(url: string, h: Record<string, string>, funn: Funn[]) {
-  const talt: Record<string, { sms: number; hjem: number }> = {};
-  for (const f of funn) {
-    const m = osloDag(new Date(Date.parse(f.created_at))).slice(0, 7);
-    talt[m] ||= { sms: 0, hjem: 0 };
-    talt[m].sms++;
-    if (f.hentet_at) talt[m].hjem++;
-  }
+async function kostnader(url: string, h: Record<string, string>, talt: Record<string, { sms: number; hjem: number }>) {
   const lagret = await fetch(`${url}/rest/v1/sms_per_maaned?select=maaned,sms,hjem&order=maaned.asc`, { headers: h });
   if (!lagret.ok) {
     // Tabellene er ikke laget ennå (supabase/sql/kostnader.sql er ikke kjørt)
-    return { kjent: false, prisSveve: PRIS_SVEVE_PER_SMS, prisClaude: PRIS_CLAUDE_PER_SMS, maaneder: [], poster: [] };
+    return { kjent: false, prisSveve: PRIS_SVEVE_PER_SMS, prisClaude: PRIS_CLAUDE_PER_SMS, lopendeFra: LOPENDE_KOSTNAD_FRA, maaneder: [] as { maaned: string; sms: number; hjem: number }[], poster: [] };
   }
   const svar = await lagret.json();
   const rader = (Array.isArray(svar) ? svar : []) as { maaned: string; sms: number; hjem: number }[];
@@ -170,6 +168,7 @@ async function kostnader(url: string, h: Record<string, string>, funn: Funn[]) {
     kjent: true,
     prisSveve: PRIS_SVEVE_PER_SMS,
     prisClaude: PRIS_CLAUDE_PER_SMS,
+    lopendeFra: LOPENDE_KOSTNAD_FRA,
     maaneder: Object.entries(alle).sort(([a], [b]) => (a < b ? -1 : 1)).map(([maaned, t]) => ({ maaned, ...t })),
     poster,
   };
@@ -221,7 +220,7 @@ Deno.serve(async (req) => {
       return json({ tall: await regnUt(url, h) });
     }
 
-    if (body.action === "ny_kostnad" || body.action === "slett_kostnad") {
+    if (body.action === "ny_kostnad" || body.action === "slett_kostnad" || body.action === "endre_type") {
       if (!(await gyldigBillett(nokkel, body.billett))) return json({ error: "Logg inn på nytt" }, 401);
       const hj = { ...h, "Content-Type": "application/json", Prefer: "return=minimal" };
       if (body.action === "ny_kostnad") {
@@ -233,6 +232,13 @@ Deno.serve(async (req) => {
       }
       const id = String(body.id ?? "");
       if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ error: "Ugyldig kostnad" }, 400);
+      if (body.action === "endre_type") {
+        const type = String(body.type ?? "");
+        if (!KOSTNAD_TYPER.includes(type) && !INNTEKT_TYPER.includes(type)) return json({ error: "Velg type" }, 400);
+        const r = await fetch(`${url}/rest/v1/okonomi?id=eq.${id}`, { method: "PATCH", headers: hj, body: JSON.stringify({ type }) });
+        if (!r.ok) return json({ error: "Kunne ikke lagre. Er supabase/sql/kostnader-kategorier.sql kjørt?" }, 502);
+        return json({ ok: true });
+      }
       const r = await fetch(`${url}/rest/v1/okonomi?id=eq.${id}`, { method: "DELETE", headers: hj });
       if (!r.ok) return json({ error: "Kunne ikke slette" }, 502);
       return json({ ok: true });
