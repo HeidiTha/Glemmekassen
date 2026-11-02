@@ -3,13 +3,13 @@
 -- Bare serverfunksjonen glemmekassen-drift (service-nøkkel) kan lese og skrive tabellene.
 
 -- 1) Kostnader og inntekter teamet legger inn selv
---    Kostnader: claude (Claude til koding), trykk, domene, annet
+--    Kostnader: sveve, claude, domene, annet (annen kostnad)
 --    Inntekter: gave (f.eks. Vipps), sponsor, stotte (f.eks. kommune eller FAU), annen_inntekt
 create table if not exists public.okonomi (
   id uuid primary key default gen_random_uuid(),
   dato date not null,
   hva text not null check (char_length(hva) between 1 and 80),
-  type text not null check (type in ('claude', 'trykk', 'domene', 'annet', 'gave', 'sponsor', 'stotte', 'annen_inntekt')),
+  type text not null check (type in ('sveve', 'claude', 'domene', 'annet', 'gave', 'sponsor', 'stotte', 'annen_inntekt')),
   belop numeric(10, 2) not null check (belop > 0 and belop <= 1000000),
   created_at timestamptz not null default now()
 );
