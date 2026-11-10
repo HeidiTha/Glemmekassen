@@ -15,15 +15,39 @@ const ITEM_TYPES = ["jakke", "genser", "bukse", "sko", "sekk", "lue/skjerf", "sp
 
 // Sikkerhetsnett: maks antall SMS totalt per døgn (alle brukere til sammen)
 const MAX_SMS_PER_DAY = 100;
-// Bilder og funn slettes automatisk etter så mange dager (se personvernteksten i hittegods.html)
+// Etter så mange dager slettes bilde, sted, kart og kode (se personvernteksten i hittegods.html).
+// Raden blir liggende med bare statistikk: gjenstand, farge, kommune, bydel, created_at og hentet_at.
 const KEEP_DAYS = 365;
+// Så mange funn tømmes per runde (holder godt med maks 100 SMS per døgn)
+const RYDD_PER_GANG = 200;
 
-// Sletter bilder og funn eldre enn KEEP_DAYS. Kjøres etter hver sendte SMS,
-// så det trengs ingen egen tidsplan. Feil her skal aldri stoppe en SMS.
+// Tømmer funn eldre enn KEEP_DAYS for alt som er personlig, og sletter bildet.
+// Kjøres etter hver sendte SMS, så det trengs ingen egen tidsplan. Feil her skal aldri stoppe en SMS.
 async function cleanupOld(url: string, h: Record<string, string>) {
   try {
     const cutoff = new Date(Date.now() - KEEP_DAYS * 86400000).toISOString();
-    await fetch(`${url}/rest/v1/${TABLE}?created_at=lt.${cutoff}`, { method: "DELETE", headers: h });
+    const gamle = await fetch(
+      `${url}/rest/v1/${TABLE}?created_at=lt.${cutoff}&anonymisert_at=is.null&select=id,bilde_url&limit=${RYDD_PER_GANG}`,
+      { headers: h },
+    );
+    if (gamle.ok) {
+      const rader = (await gamle.json()) as { id: string; bilde_url: string | null }[];
+      if (rader.length) {
+        // 1) Slett bildene som hører til funnene
+        const bilder = rader.map((r) => r.bilde_url).filter((b): b is string => !!b && b.startsWith(BILDE_PREFIX))
+          .map((b) => decodeURIComponent(b.slice(BILDE_PREFIX.length).split("?")[0]));
+        if (bilder.length) {
+          await fetch(`${url}/storage/v1/object/bilder`, { method: "DELETE", headers: h, body: JSON.stringify({ prefixes: bilder }) });
+        }
+        // 2) Tøm de personlige feltene. Koden blir null: en unik indeks i Postgres tillater mange null,
+        //    og alle oppslag krever anonymisert_at=is.null, så en gammel kode eller lenke finner ingenting.
+        await fetch(`${url}/rest/v1/${TABLE}?id=in.(${rader.map((r) => r.id).join(",")})`, {
+          method: "PATCH", headers: h,
+          body: JSON.stringify({ kode: null, bilde_url: null, stedsnavn: null, lat: null, lng: null, anonymisert_at: new Date().toISOString() }),
+        });
+      }
+    }
+    // 3) Sikkerhetsnett: bilder som aldri ble koblet til et funn (f.eks. SMS-en ble ikke sendt)
     const list = await fetch(`${url}/storage/v1/object/list/bilder`, {
       method: "POST", headers: h,
       body: JSON.stringify({ prefix: "", limit: 100, sortBy: { column: "created_at", order: "asc" } }),
@@ -137,7 +161,8 @@ Deno.serve(async (req) => {
         if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return json({ error: "Ugyldig lenke" }, 400);
         filter = `id=eq.${encodeURIComponent(id)}`;
       }
-      const r = await fetch(`${url}/rest/v1/${TABLE}?${filter}&select=${FELTER}`, { headers: h });
+      // Funn eldre enn KEEP_DAYS er tømt og skal ikke kunne åpnes
+      const r = await fetch(`${url}/rest/v1/${TABLE}?${filter}&anonymisert_at=is.null&select=${FELTER}`, { headers: h });
       if (!r.ok) return json({ error: "Kunne ikke hente gjenstand" }, 502);
       const data = await r.json();
       if (!data.length) {
@@ -157,14 +182,14 @@ Deno.serve(async (req) => {
       const id = typeof body.id === "string" && /^[0-9a-f-]{36}$/i.test(body.id) ? body.id : "";
       if (!kode && !id) return json({ error: "Mangler kode" }, 400);
       const filter = kode ? `kode=eq.${kode}` : `id=eq.${encodeURIComponent(id)}`;
-      const r = await fetch(`${url}/rest/v1/${TABLE}?${filter}&hentet_at=is.null`, {
+      const r = await fetch(`${url}/rest/v1/${TABLE}?${filter}&hentet_at=is.null&anonymisert_at=is.null`, {
         method: "PATCH", headers: { ...h, Prefer: "return=representation" },
         body: JSON.stringify({ hentet_at: new Date().toISOString() }),
       });
       if (!r.ok) return json({ error: "Kunne ikke lagre at den er hentet" }, 502);
       // Ingen treff: enten feil kode (teller som feil) eller allerede markert som hentet (helt greit)
       if (!(await r.json()).length && kode) {
-        const finnes = await fetch(`${url}/rest/v1/${TABLE}?kode=eq.${kode}&select=kode`, { headers: h });
+        const finnes = await fetch(`${url}/rest/v1/${TABLE}?kode=eq.${kode}&anonymisert_at=is.null&select=kode`, { headers: h });
         if (!(await finnes.json()).length) { registrerFeil(ip); return json({ error: "Fant ingen funn med den koden" }, 404); }
       }
       return json({ ok: true });
@@ -209,10 +234,15 @@ Deno.serve(async (req) => {
     const lat = Number(body.lat), lng = Number(body.lng);
     const okPos = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && body.lat != null && body.lng != null;
     const bildeUrl = typeof body.bilde_url === "string" && body.bilde_url.startsWith(BILDE_PREFIX) ? body.bilde_url : null;
+    // Kommune og bydel (fra appens adresseoppslag) – beholdes til statistikk etter KEEP_DAYS
+    const kommune = clean(body.kommune, 40);
+    const bydel = clean(body.bydel, 40);
 
     const record = {
       gjenstand,
       farge: farge || null,
+      kommune: kommune || null,
+      bydel: bydel || null,
       stedsnavn: [posisjon, sted].filter(Boolean).join(" – ") || null,
       lat: okPos ? lat : null,
       lng: okPos ? lng : null,

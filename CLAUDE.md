@@ -12,7 +12,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 | Eiersiden | `eier.html?kode=…` (gamle SMS-er: `?id=…`) – funnet, kart, «Jeg har hentet den» og takk | glemmekassen.com/eier.html |
 | Gammel bildeside | `bilde.html` – bare for eldre SMS-lenker | glemmekassen.com/bilde.html |
 | Bilder | Supabase Storage, bøtta `bilder` | Supabase-prosjekt `jyajkriknplrhsxustpf` |
-| Funn bak koden | tabellen `glemmekassen_shortlink_test` (kolonnene `kode`, `farge`, `hentet_at` – se `supabase/sql/kode-og-hentet.sql`) | Supabase |
+| Funn bak koden | tabellen `glemmekassen_shortlink_test` (kolonnene `kode`, `farge`, `hentet_at` – se `supabase/sql/kode-og-hentet.sql`; `kommune`, `bydel`, `anonymisert_at` – se `supabase/sql/statistikk-etter-ett-aar.sql`) | Supabase |
 | Finnerens teller | «Du har registrert 12 plagg · 7 kom hjem». Telefonen husker funn-id-ene sine (`glemmekassen_mine_funn` i localStorage), serveren svarer bare med antall hentet (`action: "status"`) | `hittegods.html` + `glemmekassen-sms` |
 | Global teller | tabellen `counter` + funksjonen `increment_counter` | Supabase | (brukes ikke av appen nå)
 | SMS | serverfunksjonen `glemmekassen-sms` → Sveve | `supabase/functions/glemmekassen-sms` |
@@ -35,7 +35,10 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 - Maks 500 kall til Claude totalt per døgn (`MAX_AI_CALLS_PER_DAY` i `claude-proxy`), talt i tabellen `ai_bruk` (se `supabase/sql/ai-dagsgrense.sql`).
 - Nummeret leses bare når brukeren trykker på kameraknappen (`capturePhoto()` i `hittegods.html`): ett bilde = ett kall til Claude. Ingen automatisk skanning – hvert kall koster penger.
 - Hvis lesing av nummer slutter å virke: sjekk først kreditten på console.anthropic.com (Plans & Billing).
-- Bilder og funn slettes automatisk etter 365 dager (`KEEP_DAYS`). Oppryddingen kjøres hver gang en SMS sendes.
+- Etter 365 dager (`KEEP_DAYS`) slettes bildet (i Storage og `bilde_url`), stedet (`stedsnavn`), kartposisjonen (`lat`, `lng`) og koden (`kode`), og `anonymisert_at` settes. Raden blir liggende med bare statistikk: `gjenstand`, `farge`, `kommune`, `bydel`, `created_at` og `hentet_at`. Oppryddingen (`cleanupOld()` i `glemmekassen-sms`) kjøres hver gang en SMS sendes, og tømmer maks 200 funn per gang.
+- Et tømt funn skal aldri kunne åpnes: alle oppslag på kode eller id i `glemmekassen-sms` må ha `anonymisert_at=is.null`. Nye felt som kan peke på en person (sted, bilde, tekst fra finneren), må tømmes i `cleanupOld()`.
+- Kommune og bydel hentes i appen fra det samme adresseoppslaget (OpenStreetMap) som adressen (`settOmraade()` i `hittegods.html`). Uten GPS blir de tomme. `bydel` er bare `city_district`, fordi «suburb» er strøk og ikke bydel.
+- Funn registrert før endringen får kommune med engangsskriptet `supabase/scripts/fyll-kommune-for-gamle-funn.ps1`.
 - Bare norske mobilnummer (8 siffer, starter med 4 eller 9).
 - Driftssiden: maks 5 feil passord per 15 minutter per IP. Grensene `MAX_SMS_PER_DAY` og `MAX_AI_CALLS_PER_DAY` står også i `glemmekassen-drift` – endre alle stedene samtidig. Driftssiden skal aldri vise telefonnummer, bilder, koder eller steder for enkeltfunn.
 - Koden er 6 siffer (f.eks. 482915), så iPhone og Android kan foreslå den på tastaturet. Kodefeltet på `kode/index.html` har `autocomplete="one-time-code"` og `inputmode="numeric"`, så telefonen foreslår koden når eieren trykker i feltet. Lenken i SMS-en er bare glemmekassen.com/kode, uten koden – det virker tryggere. Eldre koder med bokstaver (f.eks. K7M4Q2) virker fortsatt. Maks 10 feil koder per time per IP (`MAX_FEIL_KODER_PER_TIME`), så ingen kan prøve seg fram til andres funn.
