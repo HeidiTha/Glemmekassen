@@ -1957,17 +1957,39 @@ function getLocation() {
 }
 
 // ── Summary ────────────────────────────────────────────
+// Slår sammen GPS-sted og fritekst uten at samme sted står to ganger.
+// «Smestad skole, Smestadveien 2, Oslo» + «Smestad skole, ved gymsalen» → «Smestad skole, Smestadveien 2, Oslo, ved gymsalen».
+// Maks 80 tegn (samme grense som serveren): da tas byen og så gateadressen bort fra GPS-stedet først.
+const MAKS_STED = 80;
+function slaaSammenSted(gpsSted, fritekst) {
+  const norm = (s) => s.toLowerCase().replace(/[.,;:!?]/g, ' ').replace(/\s+/g, ' ').trim();
+  const deler = (s) => s.split(',').map((d) => d.trim()).filter(Boolean);
+  if (!gpsSted) return fritekst.slice(0, MAKS_STED);
+  if (!fritekst || norm(gpsSted).includes(norm(fritekst))) return gpsSted.slice(0, MAKS_STED);
+  if (norm(fritekst).includes(norm(gpsSted))) return fritekst.slice(0, MAKS_STED);
+  // Ta bort deler av friteksten som allerede står i GPS-stedet
+  const gpsDeler = deler(gpsSted);
+  const kjente = gpsDeler.map(norm);
+  const nye = deler(fritekst).filter((d) => !kjente.includes(norm(d)));
+  if (!nye.length) return gpsSted.slice(0, MAKS_STED);
+  const gps = gpsDeler.slice();
+  let tekst = [...gps, ...nye].join(', ');
+  while (tekst.length > MAKS_STED && gps.length > 1) { gps.pop(); tekst = [...gps, ...nye].join(', '); }
+  return tekst.slice(0, MAKS_STED);
+}
+
 function goToSummary() {
-  // Stedet i SMS-en er GPS-stedet (eller det finneren rettet det til med «Feil sted?»).
-  // Fritekstfeltet «Hvor fant du den?» er detaljen. Uten GPS-sted blir fritekstfeltet stedet i SMS-en.
+  // Stedet i SMS-en og på eiersiden = GPS-stedet (eller det rettede stedet) + fritekst, skilt med komma,
+  // f.eks. «ART danseskole, Røa, ved garderoben». Uten GPS-sted brukes friteksten alene.
+  // Alt sendes som «posisjon», så serveren trenger ingen endring (den bruker posisjon i SMS-en og i stedsnavn).
   // Kartet i SMS-en kommer alltid fra GPS (state.lat/state.lng) når den finnes.
   const fritekst = document.getElementById('address-input').value.trim();
   const gpsSted = (state.gpsAdresse || '').trim();
-  state.locationText = gpsSted || fritekst;
-  state.placeName = gpsSted ? fritekst : '';
+  state.locationText = slaaSammenSted(gpsSted, fritekst);
+  state.placeName = '';
   state.itemType = document.getElementById('item-type').value;
 
-  const locationStr = [state.locationText || (state.lat ? 'Din posisjon (se kartet)' : ''), state.placeName].filter(Boolean).join(' – ');
+  const locationStr = state.locationText || (state.lat ? 'Din posisjon (se kartet)' : '');
   if (!state.locationText && !state.lat) {
     showToast('Skriv hvor du fant den', 'error');
     return;
