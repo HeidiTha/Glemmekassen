@@ -60,45 +60,67 @@ async function cleanupOld(url: string, h: Record<string, string>) {
   } catch (_) { /* prøver igjen neste gang */ }
 }
 
-// Kort, ren tekst: ingen linjeskift, lenker eller nettadresser
+// Tegnene en SMS kan sende med 153 tegn per del (GSM 03.38, grunnsettet). Andre tegn (emoji, «», –, “”)
+// gjør at hele SMS-en sendes med 67 tegn per del. MÅ HOLDES LIK GSM_TEGN/tilGsm() i hittegods.html.
+const GSM_TEGN = "@£$¥èéùìòÇØøÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
+const GSM_BYTT: Record<string, string> = {
+  "–": "-", "—": "-", "‒": "-", "―": "-", "‐": "-", "‑": "-", "−": "-",
+  "«": '"', "»": '"', "“": '"', "”": '"', "„": '"', "‟": '"', "″": '"',
+  "‘": "'", "’": "'", "‚": "'", "‛": "'", "′": "'", "`": "'", "´": "'",
+  "…": "...", "•": "-", "·": "-", "[": "(", "]": ")", "{": "(", "}": ")", "\\": "/", "|": "/",
+};
+// Bytter typografiske tegn til vanlige, tar bort aksenter som ikke finnes i GSM (á → a) og fjerner resten (emoji).
+// æ, ø og å finnes i GSM og beholdes.
+function tilGsm(tekst: string): string {
+  let ut = "";
+  for (const t of tekst) {
+    if (GSM_TEGN.includes(t)) { ut += t; continue; }
+    if (GSM_BYTT[t] !== undefined) { ut += GSM_BYTT[t]; continue; }
+    if (/\s/.test(t)) { ut += " "; continue; }
+    const uten = t.normalize("NFD").replace(/[̀-ͯ]/g, "");
+    ut += [...uten].every((c) => GSM_TEGN.includes(c)) ? uten : "";
+  }
+  return ut;
+}
+
+// Kort, ren tekst: ingen linjeskift, lenker, nettadresser eller tegn utenfor GSM
 function clean(value: unknown, max: number): string {
-  return String(value ?? "")
+  return tilGsm(String(value ?? "")
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/(https?:\/\/|www\.)\S*/gi, "")
-    .replace(/\S+\.(no|com|net|org|io|ly|me|app|link|xyz|info|biz|co|se|dk|eu|tk|gl|gd|cc)\b\S*/gi, "")
+    .replace(/\S+\.(no|com|net|org|io|ly|me|app|link|xyz|info|biz|co|se|dk|eu|tk|gl|gd|cc)\b\S*/gi, ""))
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, max);
 }
 
 // Hvordan hver kategori skrives i SMS-en, så småordene blir riktig norsk.
-// ord = «Noen har funnet …», din = «som kan være …», den = «Fikk du … igjen?».
+// ord = «Noen har funnet …», din = «som kan være …», best = «Fikk du … igjen?».
 // MÅ HOLDES LIK SMS_ORD i hittegods.html (forhåndsvisningen).
-const SMS_ORD: Record<string, { ord: string; din: string; den: string }> = {
-  "jakke":        { ord: "en jakke",               din: "din",  den: "den" },
-  "genser":       { ord: "en genser",              din: "din",  den: "den" },
-  "bukse":        { ord: "en bukse",               din: "din",  den: "den" },
-  "sko":          { ord: "et par sko",             din: "dine", den: "dem" },
-  "sekk":         { ord: "en sekk",                din: "din",  den: "den" },
-  "lue/skjerf":   { ord: "en lue eller et skjerf", din: "din",  den: "den" },
-  "sportsutstyr": { ord: "noe sportsutstyr",       din: "ditt", den: "det" },
-  "vannflaske":   { ord: "en vannflaske",          din: "din",  den: "den" },
-  "annet":        { ord: "en gjenstand",           din: "din",  den: "den" },
+const SMS_ORD: Record<string, { ord: string; din: string; best: string }> = {
+  "jakke":        { ord: "en jakke",               din: "din",  best: "jakken din" },
+  "genser":       { ord: "en genser",              din: "din",  best: "genseren din" },
+  "bukse":        { ord: "en bukse",               din: "din",  best: "buksen din" },
+  "sko":          { ord: "et par sko",             din: "dine", best: "skoene dine" },
+  "sekk":         { ord: "en sekk",                din: "din",  best: "sekken din" },
+  "lue/skjerf":   { ord: "en lue eller et skjerf", din: "din",  best: "lua eller skjerfet ditt" },
+  "sportsutstyr": { ord: "noe sportsutstyr",       din: "ditt", best: "sportsutstyret ditt" },
+  "vannflaske":   { ord: "en vannflaske",          din: "din",  best: "vannflasken din" },
+  "annet":        { ord: "en gjenstand",           din: "din",  best: "tingen din" },
 };
 
-// Ingen emoji eller spesialtegn i fast tekst: da får SMS-en plass til mer per del (billigere).
+// Ingen emoji eller spesialtegn i fast tekst: da får SMS-en plass til 153 tegn per del (billigere).
+// Teksten er laget for å holde seg på 2 deler (maks 306 tegn) med vanlige steder.
+// MÅ HOLDES LIK buildSmsText() i hittegods.html.
 function smsText(gjenstand: string, farge: string, posisjon: string, kode: string): string {
   const o = SMS_ORD[gjenstand] || SMS_ORD["annet"];
   const ting = farge ? `${o.ord} (${farge})` : o.ord;
   const hvor = posisjon || "et sted i nærheten";
   const hvorMedPreposisjon = /^(på|i|ved|hos)\s/i.test(hvor) ? hvor : `på ${hvor}`;
   return `Hei! Noen har funnet ${ting} som kan være ${o.din}, ${hvorMedPreposisjon}.
-
-Koden din er ${kode}. Se bilde og kart på glemmekassen.com/kode
-
-Føl deg trygg: Glemmekassen ber aldri om penger, passord eller BankID.
-
-Fikk du ${o.den} igjen? Send en liten hilsen til Glemmekassen på Instagram @glemmekass1`;
+Kode ${kode} gir bilde og kart på glemmekassen.com/kode
+Glemmekassen ber aldri om penger, passord eller BankID.
+Fikk du ${o.best} igjen? Si hei på Instagram @glemmekass1`;
 }
 
 // Koden: 6 siffer (f.eks. 482915). Bare tall gjør at iPhone og Android kan foreslå koden på tastaturet.
