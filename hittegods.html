@@ -1229,9 +1229,21 @@ function gpsAdresseFra(geo) {
   return [navn, gate, by].filter(Boolean).join(', ');
 }
 
+// Kommune og bydel til anonym statistikk. Hentes fra det samme svaret som adressen (ingen ekstra tjeneste).
+// Beholdes etter ett år, når nøyaktig sted, kart, bilde og kode slettes.
+function settOmraade(geo) {
+  const a = (geo && geo.address) || {};
+  const kommune = a.municipality || a.city || a.town || a.village || '';
+  // I Oslo er bydelen «suburb» eller «city_district» i OpenStreetMap
+  const bydel = kommune === 'Oslo' ? (a.city_district || a.suburb || '') : (a.city_district || '');
+  state.kommune = kommune.slice(0, 40);
+  state.bydel = bydel.slice(0, 40);
+}
+
 function refreshLocationForNewScan() {
   manualLocationOverride = false;
   state.lat = null; state.lng = null; state.locationText = ''; state.gpsAdresse = ''; state.placeName = '';
+  state.kommune = ''; state.bydel = '';
   document.getElementById('address-input').value = '';
   document.getElementById('place-input').value = '';
   document.getElementById('gps-fallback').style.display = 'none';
@@ -1306,6 +1318,7 @@ const state = {
   lng: null,
   locationText: '',
   placeName: '',
+  kommune: '', bydel: '',
   itemType: '', itemColor: '',
   photoDataUrl: null,
   stream: null,
@@ -1415,8 +1428,10 @@ function autoStartGPS() {
         const geo = await res.json();
         const addr = geo.address;
         state.gpsAdresse = gpsAdresseFra(geo);
+        settOmraade(geo);
       } catch(e) {
         state.gpsAdresse = '';
+        settOmraade(null);
       }
       if (manualLocationOverride) return;
       state.lat = gpsLat; state.lng = gpsLng;
@@ -1831,8 +1846,10 @@ function getLocation() {
         const addr = geo.address;
         const parts = [addr.road, addr.suburb || addr.neighbourhood, addr.city || addr.town].filter(Boolean);
         state.locationText = parts.join(', ');
+        settOmraade(geo);
       } catch(e) {
         state.locationText = `${state.lat.toFixed(5)}, ${state.lng.toFixed(5)}`;
+        settOmraade(null);
       }
 
       spinner.classList.remove('visible');
@@ -1984,7 +2001,9 @@ async function sendSMS() {
         posisjon: state.locationText,
         sted: state.specificPlace,
         lat: state.lat,
-        lng: state.lng
+        lng: state.lng,
+        kommune: state.kommune,
+        bydel: state.bydel
       })
     });
     const data = await res.json();
@@ -2154,7 +2173,7 @@ async function oppdaterTeller() {
     });
     const data = await res.json();
     if (res.ok && Number.isFinite(data.hentet)) {
-      // Funn slettes etter 365 dager – tallet skal ikke gå ned av den grunn
+      // Etter 365 dager tømmes funnene for personlige felt – tallet skal ikke gå ned av den grunn
       hjem = Math.min(ider.length, Math.max(hjem, data.hentet));
       try { localStorage.setItem(HJEM_KEY, String(hjem)); } catch (e) {}
       visTeller(ider.length, hjem);
@@ -2163,7 +2182,7 @@ async function oppdaterTeller() {
 }
 
 function resetApp() {
-  Object.assign(state, { phone: '', lat: null, lng: null, locationText: '', placeName: '', itemType: '', itemColor: '', photoDataUrl: null, itemPhotoDataUrl: null });
+  Object.assign(state, { phone: '', lat: null, lng: null, locationText: '', placeName: '', kommune: '', bydel: '', itemType: '', itemColor: '', photoDataUrl: null, itemPhotoDataUrl: null });
   if (itemStream) { itemStream.getTracks().forEach(t => t.stop()); itemStream = null; }
   document.getElementById('success-screen').classList.remove('visible');
   document.getElementById('phone-input').value = '';
@@ -2248,7 +2267,7 @@ if ('serviceWorker' in navigator) {
 <div style="margin: 0 16px 40px; padding: 20px 24px; background: rgba(255,255,255,0.04); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06);">
   <div style="font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #7a8aaa; margin-bottom: 12px;">🔒 Personvern</div>
   <p style="font-size: 12px; color: #7a8aaa; line-height: 1.7; margin: 0;">
-    Glemmekassen bruker telefonnummeret som er sydd inn i gjenstanden for å varsle eieren om at gjenstanden er funnet. Nummeret brukes bare til å sende SMS-en og lagres ikke hos Glemmekassen. Bilde, gjenstand, farge og funnsted lagres i opptil 365 dager sammen med en kode som eieren får på SMS, og slettes deretter automatisk. Den som har koden kan se funnet og markere det som hentet – da lagres tidspunktet. På telefonen til den som finner lagres en liste over funnene som er registrert der, så appen kan vise hvor mange som har kommet hjem. Listen inneholder ingen telefonnummer. For å levere tjenesten sendes bildene til Anthropic (leser nummeret og gjenkjenner gjenstanden), og SMS sendes via Sveve. Tjenesten drives av Heidi Thaulow –
+    Glemmekassen bruker telefonnummeret som er sydd inn i gjenstanden for å varsle eieren om at gjenstanden er funnet. Nummeret brukes bare til å sende SMS-en og lagres ikke hos Glemmekassen. Bilde, gjenstand, farge og funnsted (adresse og kartposisjon) lagres sammen med en kode som eieren får på SMS. Etter 365 dager slettes bildet, adressen, kartposisjonen og koden automatisk, og funnet kan ikke lenger åpnes. Til statistikk beholdes bare type gjenstand, farge, kommune og bydel, når funnet ble registrert og om (og når) det ble hentet. Dette kan ikke knyttes til en person. Den som har koden kan se funnet og markere det som hentet – da lagres tidspunktet. På telefonen til den som finner lagres en liste over funnene som er registrert der, så appen kan vise hvor mange som har kommet hjem. Listen inneholder ingen telefonnummer. For å levere tjenesten sendes bildene til Anthropic (leser nummeret og gjenkjenner gjenstanden), og SMS sendes via Sveve. Tjenesten drives av Heidi Thaulow –
     <a href="mailto:heidi.thaulow@gmail.com" style="color: #00e5a0; text-decoration: none;">heidi.thaulow@gmail.com</a>.
   </p>
 </div>
