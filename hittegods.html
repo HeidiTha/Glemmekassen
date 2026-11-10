@@ -829,7 +829,12 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
 }
 #step-3 .place-input::placeholder{color:#a7b1bd!important;opacity:1!important}
 #step-3 .place-field-label{display:block!important}
-#step-3 #address-input{margin-bottom:16px!important}
+#step-3 .place-fix{margin:-6px 0 18px!important}
+#step-3 .place-fix[hidden]{display:none!important}
+#step-3 .place-fix-title{font-size:15px!important;font-weight:750!important;color:#405b7d!important;margin:0 0 10px!important}
+#step-3 .place-fix .place-chip{white-space:normal!important;text-align:left!important}
+#step-3 .place-change[hidden]{display:none!important}
+#step-3 #place-input{margin-bottom:16px!important}
 #step-3 .place-input:focus{border-color:#203c61!important}
 #step-3 .place-nav {
   position:fixed!important;bottom:0!important;
@@ -1116,12 +1121,20 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
         <div class="loc-value" id="loc-value">Henter posisjon automatisk …</div>
       </div>
       <div class="location-spinner" id="loc-spinner"></div>
+      <!-- Vises når GPS har svart: «Feil sted?» (eller «Prøv igjen» når GPS ikke virket) -->
+      <button type="button" class="place-change" id="place-gps-button" onclick="feilSted()" hidden>Feil sted?</button>
     </div>
-    <div id="gps-fallback" style="display:none; margin:-10px 0 20px; padding:12px; border-radius:12px; background:#fff2da; color:#203c61; font-size:13px;">Posisjonen er ikke tilgjengelig. Skriv adressen eller skolen i feltet under.</div>
+    <!-- Rett GPS-stedet: velg blant forslag fra samme kartoppslag, eller skriv stedet selv -->
+    <div class="place-fix" id="place-fix" hidden>
+      <div class="place-fix-title">Velg riktig sted, eller skriv det selv:</div>
+      <div class="place-chips" id="place-choices"></div>
+      <input type="text" id="gps-place-input" class="place-input" placeholder="F.eks. ART danseskole, Røa" autocomplete="off" maxlength="80" aria-label="Skriv riktig sted" oninput="skrivEgetSted(this.value)">
+    </div>
+    <div id="gps-fallback" style="display:none; margin:-10px 0 20px; padding:12px; border-radius:12px; background:#fff2da; color:#203c61; font-size:13px;">Fant ikke posisjonen din. Skriv hvor du fant den i feltet under, f.eks. «Smestad skole, ved gymsalen».</div>
 
-    <!-- Ett felt for sted. Tomt felt = adressen fra GPS brukes. autocomplete="off", så telefonen ikke foreslår finnerens egen adresse. -->
-    <label class="place-field-label" for="address-input">Hvor fant du den?</label>
-    <input type="text" id="address-input" class="place-input" placeholder="F.eks. Smestad skole, ved gymsalen" autocomplete="off" maxlength="80">
+    <!-- Ett fritekstfelt. autocomplete="off", så telefonen ikke foreslår finnerens egen adresse. -->
+    <label class="place-field-label" for="place-input">Hvor fant du den?</label>
+    <input type="text" id="place-input" class="place-input" placeholder="F.eks. Smestad skole, ved gymsalen" autocomplete="off" maxlength="80">
     <div class="nav-row place-nav">
       <button class="nav-back" onclick="goToStep(2)" aria-label="Tilbake">❮</button>
       <button class="nav-next" onclick="goToSummary()">Neste: Se over <span>➜</span></button>
@@ -1208,10 +1221,11 @@ body.har-teller #step-0 {height:clamp(160px,calc(100dvh - 590px),400px)!importan
 
 <script>
 
-// Steget «Hvor fant du det?» har tre deler:
-//   1. «Din posisjon nå» – hentes automatisk med GPS og gir kartet i SMS-en
-//   2. «Sted» – adresse eller skole som brukeren skriver selv (tomt hver gang)
-//   3. «Hvor nøyaktig?» – f.eks. lekeplassen eller 1. klasse-gangen
+// Steget «Hvor fant du det?» har to deler:
+//   1. «Din posisjon nå» – hentes automatisk med GPS og gir kartet og stedet i SMS-en.
+//      «Feil sted?» henter posisjonen på nytt og lar finneren velge et annet forslag eller skrive stedet selv.
+//   2. «Hvor fant du den?» – fritekst, f.eks. «Smestad skole, ved gymsalen» (tomt hver gang).
+//      Uten GPS er dette stedet i SMS-en.
 let manualLocationOverride = false; // brukes av GPS-koden; er alltid false nå
 // Stedet huskes ikke: feltet er tomt hver gang. Fjern det gamle stedet fra eldre versjoner av appen.
 try { localStorage.removeItem('glemmekassen_sted'); } catch(e) {}
@@ -1226,10 +1240,103 @@ function gpsAdresseFra(geo) {
   return [navn, gate, by].filter(Boolean).join(', ');
 }
 
+// Forslag når GPS-stedet er feil (f.eks. tannlegen vegg i vegg med danseskolen).
+// Alt kommer fra det samme kartoppslaget, så det koster ingen ekstra kall:
+// stedsnavnet, bare adressen og strøket. Maks tre, uten like.
+function stedForslagFra(geo) {
+  const a = (geo && geo.address) || {};
+  const by = a.city || a.town || a.village || '';
+  const gate = [a.road, a.house_number].filter(Boolean).join(' ');
+  const strok = a.suburb || a.neighbourhood || a.quarter || '';
+  const forslag = [gpsAdresseFra(geo), [gate, by].filter(Boolean).join(', '), strok ? [strok, by].filter(Boolean).join(', ') : ''];
+  return forslag.filter((f, i) => f && forslag.indexOf(f) === i).slice(0, 3);
+}
+
+// Viser GPS-stedet i raden «Din posisjon nå»
+function visGpsSted(tekst) {
+  document.getElementById('loc-value').textContent = tekst || 'Posisjonen er funnet – vises på kartet';
+}
+
+// «Feil sted?» / «Prøv igjen»: hent posisjonen på nytt (ikke en gammel), og vis forslag og skrivefelt
+function feilSted() {
+  if (!navigator.geolocation) { visRettSted([]); return; }
+  const spinner = document.getElementById('loc-spinner');
+  const knapp = document.getElementById('place-gps-button');
+  spinner.classList.add('visible');
+  knapp.disabled = true;
+  document.getElementById('loc-value').textContent = 'Henter posisjonen på nytt …';
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      state.lat = pos.coords.latitude; state.lng = pos.coords.longitude;
+      let forslag = [];
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lng}&format=json`);
+        const geo = await res.json();
+        forslag = stedForslagFra(geo);
+        // Kommune/bydel til statistikk (finnes når heidi/statistikk-etter-ett-aar er slått sammen)
+        if (typeof settOmraade === 'function') settOmraade(geo);
+      } catch (e) { /* uten svar kan finneren skrive stedet selv */ }
+      if (!state.stedRettet) state.gpsAdresse = forslag[0] || '';
+      spinner.classList.remove('visible');
+      knapp.disabled = false;
+      document.getElementById('gps-fallback').style.display = 'none';
+      document.getElementById('location-row').classList.add('has-location');
+      knapp.textContent = 'Feil sted?';
+      visGpsSted(state.gpsAdresse);
+      visRettSted(forslag);
+    },
+    () => {
+      spinner.classList.remove('visible');
+      knapp.disabled = false;
+      visGpsSted(state.gpsAdresse || (state.lat ? '' : 'Posisjon ikke tilgjengelig'));
+      if (!state.lat) document.getElementById('gps-fallback').style.display = 'block';
+      if (state.lat) visRettSted([state.gpsAdresse].filter(Boolean));
+      else showToast('Fant ikke posisjonen. Skriv stedet i feltet under.', 'error');
+    },
+    { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
+  );
+}
+
+// Viser forslagene som knapper og feltet for å skrive stedet selv
+function visRettSted(forslag) {
+  const boks = document.getElementById('place-fix');
+  const liste = document.getElementById('place-choices');
+  liste.textContent = '';
+  forslag.forEach((tekst) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'place-chip' + (tekst === state.gpsAdresse ? ' selected' : '');
+    b.textContent = tekst;
+    b.onclick = () => {
+      state.gpsAdresse = tekst; state.stedRettet = true;
+      document.getElementById('gps-place-input').value = '';
+      liste.querySelectorAll('.place-chip').forEach((c) => c.classList.toggle('selected', c === b));
+      visGpsSted(tekst);
+    };
+    liste.appendChild(b);
+  });
+  liste.hidden = !forslag.length;
+  state.gpsForslag = forslag;
+  boks.hidden = false;
+}
+
+// Finneren skriver riktig sted selv, f.eks. «ART danseskole, Røa»
+function skrivEgetSted(verdi) {
+  const tekst = verdi.trim();
+  document.querySelectorAll('#place-choices .place-chip').forEach((c) => c.classList.remove('selected'));
+  state.stedRettet = !!tekst;
+  state.gpsAdresse = tekst || (state.gpsForslag || [])[0] || '';
+  visGpsSted(state.gpsAdresse);
+}
+
 function refreshLocationForNewScan() {
   manualLocationOverride = false;
   state.lat = null; state.lng = null; state.locationText = ''; state.gpsAdresse = ''; state.placeName = '';
-  document.getElementById('address-input').value = '';
+  state.stedRettet = false; state.gpsForslag = [];
+  document.getElementById('place-input').value = '';
+  document.getElementById('gps-place-input').value = '';
+  document.getElementById('place-fix').hidden = true;
+  document.getElementById('place-gps-button').hidden = true;
   document.getElementById('gps-fallback').style.display = 'none';
   document.getElementById('location-row').classList.remove('has-location');
   document.getElementById('place-small-label').textContent = 'Din posisjon nå';
@@ -1416,6 +1523,8 @@ function autoStartGPS() {
       }
       if (manualLocationOverride) return;
       state.lat = gpsLat; state.lng = gpsLng;
+      // Har finneren allerede rettet stedet («Feil sted?»), skal det ikke overskrives
+      if (state.stedRettet) return;
       // Oppdater UI hvis brukeren allerede er på posisjon-steget
       const locVal = document.getElementById('loc-value');
       const row = document.getElementById('location-row');
@@ -1423,15 +1532,17 @@ function autoStartGPS() {
       document.getElementById('place-small-label').textContent = 'Din posisjon nå';
       row.classList.add('has-location');
       const gpsBtn = document.getElementById('place-gps-button');
-      if (gpsBtn) gpsBtn.textContent = 'Endre';
+      if (gpsBtn) { gpsBtn.textContent = 'Feil sted?'; gpsBtn.hidden = false; }
     },
     () => {
-      // GPS feilet – vis fallback-melding
+      // GPS feilet – vis fallback-melding og «Prøv igjen»
       const fb = document.getElementById('gps-fallback');
       if (manualLocationOverride) return;
       if (fb) fb.style.display = 'block';
       const locVal = document.getElementById('loc-value');
       if (locVal) locVal.textContent = 'Posisjon ikke tilgjengelig';
+      const gpsBtn = document.getElementById('place-gps-button');
+      if (gpsBtn) { gpsBtn.textContent = 'Prøv igjen'; gpsBtn.hidden = false; }
     },
     { timeout: 10000, enableHighAccuracy: true }
   );
@@ -1847,16 +1958,18 @@ function getLocation() {
 
 // ── Summary ────────────────────────────────────────────
 function goToSummary() {
-  // Ett stedsfelt: det finneren skrev brukes i SMS-en og på eiersiden. Tomt felt = adressen fra GPS.
+  // Stedet i SMS-en er GPS-stedet (eller det finneren rettet det til med «Feil sted?»).
+  // Fritekstfeltet «Hvor fant du den?» er detaljen. Uten GPS-sted blir fritekstfeltet stedet i SMS-en.
   // Kartet i SMS-en kommer alltid fra GPS (state.lat/state.lng) når den finnes.
-  const adresse = document.getElementById('address-input').value.trim();
-  state.locationText = adresse || state.gpsAdresse || '';
-  state.placeName = '';
+  const fritekst = document.getElementById('place-input').value.trim();
+  const gpsSted = (state.gpsAdresse || '').trim();
+  state.locationText = gpsSted || fritekst;
+  state.placeName = gpsSted ? fritekst : '';
   state.itemType = document.getElementById('item-type').value;
 
-  const locationStr = state.locationText || (state.lat ? 'Din posisjon (se kartet)' : '');
-  if (!adresse && !state.lat) {
-    showToast('Skriv adressen eller skolen der du fant det', 'error');
+  const locationStr = [state.locationText || (state.lat ? 'Din posisjon (se kartet)' : ''), state.placeName].filter(Boolean).join(' – ');
+  if (!state.locationText && !state.lat) {
+    showToast('Skriv hvor du fant den', 'error');
     return;
   }
 
@@ -1886,6 +1999,7 @@ function goToSummary() {
   const locationPart = (state.locationText || '').trim();
   state.mapLink = mapLink;
   state.locationPart = locationPart;
+  state.specificPlace = state.placeName;
   state.itemPart = itemPart;
 
   const smsTxt = buildSmsText();
@@ -1976,8 +2090,8 @@ async function sendSMS() {
         bilde_url: fullUrl,
         gjenstand: state.itemType,
         farge: state.itemColor,
-        // Bare ett stedsfelt nå. Serveren tåler at «sted» mangler (eldre sider i hurtigbufferen sender det fortsatt).
         posisjon: state.locationText,
+        sted: state.specificPlace,
         lat: state.lat,
         lng: state.lng
       })
@@ -2162,7 +2276,10 @@ function resetApp() {
   if (itemStream) { itemStream.getTracks().forEach(t => t.stop()); itemStream = null; }
   document.getElementById('success-screen').classList.remove('visible');
   document.getElementById('phone-input').value = '';
-  document.getElementById('address-input').value = '';
+  document.getElementById('place-input').value = '';
+  state.stedRettet = false; state.gpsForslag = [];
+  document.getElementById('gps-place-input').value = '';
+  document.getElementById('place-fix').hidden = true;
   document.getElementById('item-type-detected').style.display = 'none';
   document.getElementById('item-type-manual').style.display = 'none';
   document.getElementById('item-type').value = '';
