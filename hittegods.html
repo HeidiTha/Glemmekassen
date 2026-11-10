@@ -1234,8 +1234,8 @@ function gpsAdresseFra(geo) {
 function settOmraade(geo) {
   const a = (geo && geo.address) || {};
   const kommune = a.municipality || a.city || a.town || a.village || '';
-  // I Oslo er bydelen «suburb» eller «city_district» i OpenStreetMap
-  const bydel = kommune === 'Oslo' ? (a.city_district || a.suburb || '') : (a.city_district || '');
+  // Bare ekte bydel (city_district). «suburb» er strøk (f.eks. Vika i Oslo), ikke bydel, og lagres ikke.
+  const bydel = a.city_district || '';
   state.kommune = kommune.slice(0, 40);
   state.bydel = bydel.slice(0, 40);
 }
