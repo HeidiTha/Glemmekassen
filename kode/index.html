@@ -1,81 +1,86 @@
 <!doctype html>
-<html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Glemmekassen – Tast koden</title>
-<!-- glemmekassen.com/kode – eieren taster koden fra SMS-en og kommer til eiersiden (../eier.html?kode=…) -->
+<html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Glemmekassen – Skriv inn koden</title>
+<meta name="theme-color" content="#FAF8F4">
+<!-- glemmekassen.com/kode – eieren taster koden fra SMS-en og kommer til eiersiden (../eier.html?kode=…).
+     Nye koder er 4 bokstaver (BTKS). Eldre koder (482915 og K7M4Q2) virker også. -->
 <style>
-:root{--navy:#203c61;--gold:#f0b53f;--cream:#f5f0e6;--line:#e3dccd;--muted:#4f6684}
+@font-face{font-family:Nunito;src:url(../felles/nunito.woff2) format('woff2');font-weight:200 1000;font-display:swap}
+:root{--bg:#FAF8F4;--navy:#1F3A5F;--linje:#E6E1D8;--ramme:#CFC8BB;--gul:#E8B54D;--feil:#A13A1C}
 *{box-sizing:border-box}
-body{margin:0;background:var(--cream);font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:var(--navy)}
-main{max-width:440px;margin:0 auto;min-height:100dvh;padding:22px 20px 42px}
-.brand{display:flex;align-items:center;gap:10px;margin-bottom:26px;color:inherit;text-decoration:none}
-.brand img{width:40px;height:40px;object-fit:contain;border-radius:9px;background:#fff}
-.brand strong{font-size:18px;display:block}
-.brand small{display:block;color:#c98f1a;font-weight:800;font-size:12px;margin-top:2px}
-h1{font-size:27px;line-height:1.17;margin:0 0 8px;letter-spacing:-.5px}
-.subtitle{font-size:15px;line-height:1.45;margin:0 0 18px;color:var(--muted)}
-label{position:absolute;left:-9999px}
-#kode{display:block;width:100%;min-height:68px;border:2.5px solid var(--navy);border-radius:16px;background:#fff;color:var(--navy);
-  font:800 30px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.32em;text-align:center;text-transform:uppercase;padding:10px 8px 10px calc(8px + .32em)}
-#kode::placeholder{color:#c3cbd5;font-weight:700}
-#kode:focus{outline:3px solid var(--gold);outline-offset:2px}
-.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;margin-top:14px;border-radius:15px;border:0;background:var(--navy);color:#fff;font:inherit;font-weight:800;font-size:19px;cursor:pointer}
+html,body{margin:0;background:var(--bg);color:var(--navy);font-family:Nunito,system-ui,-apple-system,'Segoe UI',Arial,sans-serif}
+main{max-width:440px;margin:0 auto;min-height:100dvh;padding:20px 24px calc(120px + env(safe-area-inset-bottom));position:relative}
+.topp{display:flex;align-items:center;justify-content:space-between;height:48px}
+.tilbake{width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin-left:-10px;border-radius:12px}
+.tilbake:focus-visible,.btn:focus-visible{outline:3px solid var(--gul);outline-offset:2px}
+.topp img{width:30px;height:auto}
+h1{margin:40px 0 0;font-size:26px;font-weight:800;line-height:1.2}
+.felt{position:relative;margin-top:28px}
+.ruter{display:grid;grid-template-columns:repeat(var(--antall,4),minmax(0,1fr));gap:12px}
+.ruter span{height:72px;border-radius:14px;background:#fff;border:1.5px solid var(--ramme);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800}
+.ruter.mange{gap:8px}.ruter.mange span{height:62px;font-size:26px}
+.ruter span.her{border-color:var(--navy)}
+/* Selve feltet ligger usynlig over rutene, så ett trykk hvor som helst på rutene åpner tastaturet */
+#kode{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;font-size:16px;color:transparent;background:transparent;caret-color:transparent}
+.felt:focus-within .ruter span.her{box-shadow:0 0 0 3px rgba(232,181,77,.55)}
+.feil{color:var(--feil);font-weight:700;font-size:15px;line-height:1.4;margin:14px 0 0;min-height:1.4em}
+.bunn{position:fixed;left:0;right:0;bottom:0;padding:0 24px calc(40px + env(safe-area-inset-bottom));background:linear-gradient(rgba(250,248,244,0),var(--bg) 30%)}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;max-width:392px;margin:0 auto;height:58px;border-radius:18px;border:0;background:var(--navy);color:#fff;font:inherit;font-size:17px;font-weight:800;cursor:pointer}
 .btn:disabled{opacity:.6}
-.btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
-.feil{color:#a13a1c;font-weight:700;font-size:15px;line-height:1.4;margin:12px 0 0;min-height:1.4em}
-.trygg{display:flex;gap:9px;align-items:flex-start;background:#fff;border:2px solid var(--line);border-radius:16px;padding:14px 16px;margin-top:16px;font-size:14px;line-height:1.45}
-details{margin-top:18px;text-align:center}
-.bokstaver{display:block;margin:8px auto 0;padding:6px 10px;background:none;border:0;color:var(--muted);font:inherit;font-size:13px;font-weight:650;text-decoration:underline;cursor:pointer}
-#kode::placeholder{letter-spacing:0;font-size:20px;text-transform:none;font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif}
-summary{cursor:pointer;text-decoration:underline;font-weight:650;color:var(--muted);list-style:none}
-summary::-webkit-details-marker{display:none}
-details p{text-align:left;background:#fff;border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.5;margin:10px 0 0}
+.skjult{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style></head><body><main>
-<a class="brand" href="../hittegods.html"><img src="data:image/png;base64,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" alt=""><div><strong>Glemmekassen</strong><small>Vil du hjelpe noe hjem?</small></div></a>
+<div class="topp">
+  <a class="tilbake" href="../hittegods.html" aria-label="Tilbake til forsiden"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F3A5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a>
+  <img src="../felles/ikon-lys.png" alt="Glemmekassen">
+</div>
 
-<h1>Har du fått SMS fra oss?</h1>
-<p class="subtitle">Skriv inn koden fra meldingen for å se hva som er funnet.</p>
+<h1>Skriv inn koden fra SMS-en</h1>
 
 <form id="skjema" novalidate>
-  <label for="kode">Koden fra SMS-en</label>
-  <input id="kode" name="kode" type="text" inputmode="numeric" autocomplete="one-time-code" autofocus autocapitalize="characters" spellcheck="false" maxlength="8" placeholder="6 siffer" required>
-  <button type="button" class="bokstaver" id="bokstaver">Har koden bokstaver? Trykk her</button>
-  <button class="btn" id="knapp" type="submit">Se funnet</button>
+  <div class="felt">
+    <label class="skjult" for="kode">Koden fra SMS-en</label>
+    <div class="ruter" id="ruter" aria-hidden="true"></div>
+    <input id="kode" name="kode" type="text" inputmode="text" autocapitalize="characters" autocomplete="one-time-code" autocorrect="off" spellcheck="false" maxlength="6" required>
+  </div>
   <p class="feil" id="feil" role="alert"></p>
+  <div class="bunn"><button class="btn" id="knapp" type="submit">Se plagget ditt</button></div>
 </form>
-
-<div class="trygg"><span aria-hidden="true">🛡️</span><span>Glemmekassen ber aldri om penger, passord eller BankID.</span></div>
-
-<details>
-  <summary>Hvor finner jeg koden?</summary>
-  <p>Koden står i SMS-en fra <strong>GlemmeKasse</strong>. Den har 6 siffer, for eksempel <strong>482915</strong>. Trykk i feltet, så foreslår telefonen ofte koden over tastaturet. Eldre SMS-er har koder med bokstaver, for eksempel <strong>K7M4Q2</strong> – de virker også.</p>
-</details>
 </main><script>
 const API = 'https://jyajkriknplrhsxustpf.supabase.co/functions/v1/glemmekassen-sms';
 const felt = document.getElementById('kode'), feil = document.getElementById('feil'), knapp = document.getElementById('knapp');
-const rens = v => v.toUpperCase().replace(/[\s-]/g, '');
-const gyldig = k => /^[0-9]{6}$/.test(k) || /^[A-Z0-9]{6}$/.test(k);
-// Eldre koder har bokstaver: da bytter vi til vanlig tastatur
-document.getElementById('bokstaver').addEventListener('click', () => {
-  felt.setAttribute('inputmode', 'text'); felt.blur(); setTimeout(() => felt.focus(), 50);
-  document.getElementById('bokstaver').hidden = true;
-});
-felt.addEventListener('input', () => {
-  feil.textContent = '';
-  const k = rens(felt.value);
-  // Når hele koden er limt inn eller valgt fra tastaturet, går vi videre av oss selv
-  if (/^[0-9]{6}$/.test(k)) sendInn();
-});
-// En lenke som glemmekassen.com/kode/?k=482915 fyller inn koden og åpner funnet direkte (SMS-en bruker den ikke)
-const fraLenke = rens(new URLSearchParams(location.search).get('k') || '').slice(0, 6);
-if (fraLenke) {
-  felt.value = fraLenke;
-  if (gyldig(fraLenke)) setTimeout(() => sendInn(), 0);
+const ruter = document.getElementById('ruter');
+const rens = v => v.toUpperCase().replace(/[^A-Z0-9]/g, '');
+// Nye koder: 4 bokstaver. Eldre koder: 6 siffer eller 6 bokstaver og tall.
+const gyldig = k => /^[A-Z]{4}$/.test(k) || /^[0-9]{6}$/.test(k) || /^[A-Z0-9]{6}$/.test(k);
+
+// Rutene viser det som er skrevet. Fire ruter, og flere hvis noen skriver en eldre kode på 6 tegn.
+function tegnRuter() {
+  const k = rens(felt.value).slice(0, 6);
+  if (felt.value !== k) felt.value = k;
+  const vis = k.length > 4 ? 6 : 4;
+  ruter.style.setProperty('--antall', vis);
+  ruter.classList.toggle('mange', vis > 4);
+  const bokser = [];
+  for (let i = 0; i < vis; i++) {
+    const s = document.createElement('span');
+    s.textContent = k[i] || '';
+    if (i === Math.min(k.length, vis - 1)) s.className = 'her';
+    bokser.push(s);
+  }
+  ruter.replaceChildren(...bokser);
 }
+felt.addEventListener('input', () => { feil.textContent = ''; tegnRuter(); });
+
+// En lenke som glemmekassen.com/kode/?k=BTKS fyller inn koden og åpner funnet direkte
+const fraLenke = rens(new URLSearchParams(location.search).get('k') || '').slice(0, 6);
+felt.value = fraLenke;
+tegnRuter();
+if (gyldig(fraLenke)) setTimeout(() => sendInn(), 0); else felt.focus();
 
 const sendInn = () => document.getElementById('skjema').dispatchEvent(new Event('submit', { cancelable: true }));
 document.getElementById('skjema').addEventListener('submit', async (e) => {
   e.preventDefault();
   const kode = rens(felt.value);
-  if (!gyldig(kode)) { feil.textContent = 'Koden har 6 siffer, for eksempel 482915.'; felt.focus(); return; }
+  if (!gyldig(kode)) { feil.textContent = 'Koden har 4 bokstaver, for eksempel BTKS.'; felt.focus(); return; }
   if (knapp.disabled) return;
   knapp.disabled = true; knapp.textContent = 'Leter …';
   try {
@@ -85,7 +90,7 @@ document.getElementById('skjema').addEventListener('submit', async (e) => {
     location.href = '../eier.html?kode=' + encodeURIComponent(kode);
   } catch (err) {
     feil.textContent = err.message === 'Failed to fetch' ? 'Får ikke kontakt. Sjekk nettet og prøv igjen.' : err.message;
-    knapp.disabled = false; knapp.textContent = 'Se funnet'; felt.focus();
+    knapp.disabled = false; knapp.textContent = 'Se plagget ditt'; felt.focus();
   }
 });
 </script></body></html>

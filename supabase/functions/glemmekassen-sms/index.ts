@@ -1,7 +1,7 @@
 // Glemmekassen: sender SMS til eieren og lagrer funnet bak en kort kode.
 // POST {action:"sms"}: send SMS.  POST {action:"hentet"}: eieren har hentet tingen.
 // POST {action:"status", ider:[…]}: hvor mange av finnerens funn som er hentet (telleren i appen).
-// GET ?kode=482915 (eldre: K7M4Q2): hent funnet til eiersiden.  GET ?id=: samme, for gamle SMS-lenker.
+// GET ?kode=BTKS (eldre: 482915 og K7M4Q2): hent funnet til eiersiden.  GET ?id=: samme, for gamle SMS-lenker.
 // SMS-teksten lages her på serveren – nettleseren sender bare korte, rensede felter,
 // så ingen kan bruke tjenesten til å sende egne meldinger.
 
@@ -72,48 +72,69 @@ function clean(value: unknown, max: number): string {
 }
 
 // Hvordan hver kategori skrives i SMS-en, så småordene blir riktig norsk.
-// ord = «Noen har funnet …», din = «som kan være …», den = «Fikk du … igjen?».
+// ord = «Noen har funnet …», den = «se bilde og hvor … ligger».
 // MÅ HOLDES LIK SMS_ORD i hittegods.html (forhåndsvisningen).
-const SMS_ORD: Record<string, { ord: string; din: string; den: string }> = {
-  "jakke":        { ord: "en jakke",               din: "din",  den: "den" },
-  "genser":       { ord: "en genser",              din: "din",  den: "den" },
-  "bukse":        { ord: "en bukse",               din: "din",  den: "den" },
-  "sko":          { ord: "et par sko",             din: "dine", den: "dem" },
-  "sekk":         { ord: "en sekk",                din: "din",  den: "den" },
-  "lue/skjerf":   { ord: "en lue eller et skjerf", din: "din",  den: "den" },
-  "sportsutstyr": { ord: "noe sportsutstyr",       din: "ditt", den: "det" },
-  "vannflaske":   { ord: "en vannflaske",          din: "din",  den: "den" },
-  "annet":        { ord: "en gjenstand",           din: "din",  den: "den" },
+const SMS_ORD: Record<string, { ord: string; den: string }> = {
+  "jakke":        { ord: "en jakke",               den: "den" },
+  "genser":       { ord: "en genser",              den: "den" },
+  "bukse":        { ord: "en bukse",               den: "den" },
+  "sko":          { ord: "et par sko",             den: "de" },
+  "sekk":         { ord: "en sekk",                den: "den" },
+  "lue/skjerf":   { ord: "en lue eller et skjerf", den: "den" },
+  "sportsutstyr": { ord: "noe sportsutstyr",       den: "det" },
+  "vannflaske":   { ord: "en vannflaske",          den: "den" },
+  "annet":        { ord: "en gjenstand",           den: "den" },
 };
 
-// Ingen emoji eller spesialtegn i fast tekst: da får SMS-en plass til mer per del (billigere).
-function smsText(gjenstand: string, farge: string, posisjon: string, kode: string): string {
+// Bare tegn fra det vanlige SMS-alfabetet (GSM 7-bit). Ett tegn utenfor (f.eks. emoji, «» eller ’)
+// gjør at hver SMS-del bare får plass til 67 tegn i stedet for 153 – og SMS-en blir dyrere.
+// Brukes bare på stedet fra finneren. Den faste teksten under har bare slike tegn.
+const GSM_TEGN = "@£$¥èéùìòÇØøÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà\n";
+function gsm(tekst: string): string {
+  return tekst
+    .replace(/[\u2018\u2019\u00b4`]/g, "'").replace(/[\u201c\u201d\u00ab\u00bb]/g, '"').replace(/[\u2013\u2014]/g, "-")
+    .split("").map((t) => GSM_TEGN.includes(t) ? t : t.normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
+    .filter((t) => t.length === 1 && GSM_TEGN.includes(t)).join("")
+    .replace(/\s+/g, " ").trim();
+}
+
+// SMS-teksten. Ingen emoji eller spesialtegn: da får SMS-en plass til mer per del (billigere).
+// Fargen er ikke med – «en jakke (blå)» leses dårlig, og eieren ser fargen på bildet.
+function smsText(gjenstand: string, posisjon: string, kode: string): string {
   const o = SMS_ORD[gjenstand] || SMS_ORD["annet"];
-  const ting = farge ? `${o.ord} (${farge})` : o.ord;
-  const hvor = posisjon || "et sted i nærheten";
+  const hvor = gsm(posisjon) || "et sted i nærheten";
   const hvorMedPreposisjon = /^(på|i|ved|hos)\s/i.test(hvor) ? hvor : `på ${hvor}`;
-  return `Hei! Noen har funnet ${ting} som kan være ${o.din}, ${hvorMedPreposisjon}.
+  return `Hei! Noen har funnet ${o.ord} med ditt nummer på navnelappen ${hvorMedPreposisjon}.
 
-Koden din er ${kode}. Se bilde og kart på glemmekassen.com/kode
+Trykk her for å se bilde og hvor ${o.den} ligger: glemmekassen.com/k?${kode}
 
-Føl deg trygg: Glemmekassen ber aldri om penger, passord eller BankID.
+Alternativt gå inn på glemmekassen.com og skriv koden ${kode}.
 
-Fikk du ${o.den} igjen? Send en liten hilsen til Glemmekassen på Instagram @glemmekass1`;
+Hilsen Heidi Thaulow og Nora Brath Ingerø i Glemmekassen`;
 }
 
-// Koden: 6 siffer (f.eks. 482915). Bare tall gjør at iPhone og Android kan foreslå koden på tastaturet.
+// Koden: 4 store bokstaver (f.eks. BTKS). Den står i lenken i SMS-en og er lett å taste.
+// Uten I, L, O og Q, som lett forveksles med 1, 0 og hverandre: 22 bokstaver gir 234 256 koder.
+const KODE_TEGN = "ABCDEFGHJKMNPRSTUVWXYZ";
+const KODE_LENGDE = 4;
+// Koder vi ikke vil sende til noen
+const STYGGE_KODER = ["FUCK", "FAEN", "KUKK", "CUNT", "PUPP", "RUMP", "SEXY", "DRAP", "DREP", "NAZI"];
 function nyKode(): string {
-  // Trekker et tilfeldig tall 0–999999 uten skjevhet og fyller ut med nuller foran
-  const grense = 4294000000; // største multiplum av 1 000 000 under 2^32
-  let n = 0;
-  do { n = crypto.getRandomValues(new Uint32Array(1))[0]; } while (n >= grense);
-  return String(n % 1000000).padStart(6, "0");
+  // Trekker hver bokstav uten skjevhet: tall over største multiplum av 22 under 2^32 kastes
+  const grense = Math.floor(4294967296 / KODE_TEGN.length) * KODE_TEGN.length;
+  let kode = "";
+  while (kode.length < KODE_LENGDE) {
+    const n = crypto.getRandomValues(new Uint32Array(1))[0];
+    if (n < grense) kode += KODE_TEGN[n % KODE_TEGN.length];
+  }
+  return STYGGE_KODER.includes(kode) ? nyKode() : kode;
 }
-// Eldre SMS-er har koder med 6 bokstaver og tall uten 0/O og 1/I/L (f.eks. K7M4Q2). De virker fortsatt.
+// Eldre SMS-er har koder med 6 siffer (482915) eller 6 bokstaver og tall uten 0/O og 1/I/L (K7M4Q2). De virker fortsatt.
 const GAMMEL_KODE_TEGN = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 // Tåler små bokstaver, mellomrom og bindestrek fra eieren
 function rensKode(value: unknown): string {
   const k = String(value ?? "").toUpperCase().replace(/[\s-]/g, "");
+  if (new RegExp(`^[${KODE_TEGN}]{${KODE_LENGDE}}$`).test(k)) return k;
   if (/^[0-9]{6}$/.test(k)) return k;
   return new RegExp(`^[${GAMMEL_KODE_TEGN}]{6}$`).test(k) ? k : "";
 }
@@ -153,7 +174,7 @@ Deno.serve(async (req) => {
       if (params.has("kode")) {
         if (forMangeFeil(ip)) return json({ error: "For mange feil koder. Vent litt og prøv igjen." }, 429);
         const kode = rensKode(params.get("kode"));
-        if (!kode) { registrerFeil(ip); return json({ error: "Koden har 6 siffer, f.eks. 482915" }, 400); }
+        if (!kode) { registrerFeil(ip); return json({ error: "Koden har 4 bokstaver, f.eks. BTKS" }, 400); }
         filter = `kode=eq.${kode}`;
       } else {
         // Gamle SMS-er hadde lenke med id
@@ -248,10 +269,14 @@ Deno.serve(async (req) => {
       lng: okPos ? lng : null,
       bilde_url: bildeUrl,
     };
-    // Lag en kode som ikke er brukt fra før (prøver på nytt i det sjeldne tilfellet at den finnes)
+    // Lag en kode som ikke er brukt av et aktivt funn. Tømte funn (anonymisert_at) har ikke kode lenger.
+    // Den unike indeksen glemmekassen_kode_unik er sikkerhetsnettet hvis to SMS-er får samme kode samtidig (409).
     let kode = "", id = "";
-    for (let forsok = 0; forsok < 5 && !kode; forsok++) {
+    for (let forsok = 0; forsok < 10 && !kode; forsok++) {
       const prov = nyKode();
+      const iBruk = await fetch(`${url}/rest/v1/${TABLE}?kode=eq.${prov}&anonymisert_at=is.null&select=id`, { headers: h });
+      if (!iBruk.ok) return json({ error: "Kunne ikke lage kode" }, 502);
+      if ((await iBruk.json()).length) continue;
       const saved = await fetch(`${url}/rest/v1/${TABLE}`, {
         method: "POST", headers: { ...h, Prefer: "return=representation" }, body: JSON.stringify({ ...record, kode: prov }),
       });
@@ -260,7 +285,7 @@ Deno.serve(async (req) => {
     }
     if (!kode) return json({ error: "Kunne ikke lage kode" }, 502);
 
-    const msg = smsText(gjenstand, farge, posisjon, kode);
+    const msg = smsText(gjenstand, posisjon, kode);
     const sms = await fetch("https://sveve.no/SMS/SendMessage", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

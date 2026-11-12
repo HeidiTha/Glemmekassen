@@ -1,6 +1,6 @@
 # Glemmekassen – regler for den som endrer koden
 
-Glemmekassen er en mobil nettside: den som finner en gjenglemt gjenstand tar bilde av telefonnummeret på navnelappen, og eieren får en SMS med en kode. Med koden på glemmekassen.com/kode ser eieren bilde og kart.
+Glemmekassen er en mobil nettside: den som finner en gjenglemt gjenstand tar bilde av telefonnummeret på navnelappen, og eieren får en SMS med en lenke med kode (glemmekassen.com/k?BTKS). Lenken – eller koden tastet på glemmekassen.com/kode – viser eieren bilde og kart.
 Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold alt enkelt, og forklar endringer på vanlig norsk.
 
 ## Slik henger det sammen
@@ -8,6 +8,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 | Del | Hva | Hvor |
 |---|---|---|
 | Appen | `hittegods.html` (`index.html` sender videre hit) | glemmekassen.com (GitHub Pages, domenet ligger i `CNAME`) |
+| Lenken i SMS-en | `k/index.html` – leser koden fra adressen (`/k?BTKS`, tåler også `?kode=` og små bokstaver) og sender videre til eiersiden med `location.replace` | glemmekassen.com/k?BTKS |
 | Kodesiden | `kode/index.html` – eieren taster koden fra SMS-en | glemmekassen.com/kode |
 | Eiersiden | `eier.html?kode=…` (gamle SMS-er: `?id=…`) – funnet, kart, «Jeg har hentet den» og takk | glemmekassen.com/eier.html |
 | Gammel bildeside | `bilde.html` – bare for eldre SMS-lenker | glemmekassen.com/bilde.html |
@@ -23,7 +24,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 
 1. **Aldri nøkler eller passord i HTML-filene.** Alt i HTML er offentlig. Hemmeligheter (Sveve, Anthropic, service-nøkkel) ligger bare som *secrets* i Supabase. Den eneste nøkkelen i HTML er Supabase sin offentlige `anon`-nøkkel, og den er laget for å være offentlig.
 2. **Ikke lag kopier av sider** (`hittegods (2).html`, `..._TEST.html`, `backup/`). Alt som ligger i repoet er en offentlig side. Endre `hittegods.html` direkte – GitHub tar vare på alle gamle versjoner.
-3. **SMS-teksten bestemmes på serveren**, i `smsText()` i `supabase/functions/glemmekassen-sms/index.ts`. `buildSmsText()` i `hittegods.html` er bare forhåndsvisningen – endre begge hvis teksten skal endres.
+3. **SMS-teksten bestemmes på serveren**, i `smsText()` i `supabase/functions/glemmekassen-sms/index.ts`. `buildSmsText()` i `hittegods.html` er bare forhåndsvisningen – endre begge hvis teksten skal endres (også `SMS_ORD` og `gsm()`). Teksten har gjenstanden (`SMS_ORD`), stedet, lenken `glemmekassen.com/k?KODE`, koden alene og hilsen fra Heidi og Nora. Fargen er ikke med i SMS-en (den lagres fortsatt).
 4. **Instruksjonene til Claude ligger på serveren**, i `PROMPTS` i `supabase/functions/claude-proxy/index.ts`. Appen sender bare navnet på oppgaven (`ocr`, `item`). `live_ocr` ligger fortsatt på serveren, men appen bruker den ikke lenger. Nye oppgaver må legges til der. Modellen er Claude Haiku 5.5 (`claude-haiku-5-5`) – den billigste, og god nok til å lese nummer og farge.
 5. **Tekst fra brukere eller lenker settes inn med `textContent`, aldri `innerHTML`.**
 6. **Bilder lastes opp uten `x-upsert`** og med tilfeldig navn (`crypto.randomUUID()`). Bøtta tillater ikke listing.
@@ -41,8 +42,8 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 - Funn registrert før endringen får kommune med engangsskriptet `supabase/scripts/fyll-kommune-for-gamle-funn.ps1`.
 - Bare norske mobilnummer (8 siffer, starter med 4 eller 9).
 - Driftssiden: maks 5 feil passord per 15 minutter per IP. Grensene `MAX_SMS_PER_DAY` og `MAX_AI_CALLS_PER_DAY` står også i `glemmekassen-drift` – endre alle stedene samtidig. Driftssiden skal aldri vise telefonnummer, bilder, koder eller steder for enkeltfunn.
-- Koden er 6 siffer (f.eks. 482915), så iPhone og Android kan foreslå den på tastaturet. Kodefeltet på `kode/index.html` har `autocomplete="one-time-code"` og `inputmode="numeric"`, så telefonen foreslår koden når eieren trykker i feltet. Lenken i SMS-en er bare glemmekassen.com/kode, uten koden – det virker tryggere. Eldre koder med bokstaver (f.eks. K7M4Q2) virker fortsatt. Maks 10 feil koder per time per IP (`MAX_FEIL_KODER_PER_TIME`), så ingen kan prøve seg fram til andres funn.
-- SMS-teksten har ingen emoji, og avsendernavnet er `GlemmeKasse` (Sveve tillater maks 11 tegn). Uten emoji får hver SMS-del plass til 153 tegn i stedet for 67, og det blir billigere.
+- Koden er 4 store bokstaver (f.eks. BTKS), uten I, L, O og Q (`KODE_TEGN` og `KODE_LENGDE` i `glemmekassen-sms`). Den trekkes med `crypto.getRandomValues` uten skjevhet, sjekkes mot aktive funn (`anonymisert_at=is.null`) og trekkes på nytt ved treff. Nora har bestemt (november 2026) at koden skal stå i lenken i SMS-en: glemmekassen.com/k?BTKS. Kodefeltet på `kode/index.html` har `inputmode="text"` og `autocapitalize="characters"`. Eldre koder virker fortsatt: 6 siffer (482915) og 6 bokstaver/tall (K7M4Q2). Maks 10 feil koder per time per IP (`MAX_FEIL_KODER_PER_TIME`), så ingen kan prøve seg fram til andres funn. Det finnes bare 234 256 koder med 4 bokstaver: blir det mange aktive funn, bør `KODE_LENGDE` økes til 5.
+- SMS-teksten har ingen emoji, og avsendernavnet er `GlemmeKasse` (Sveve tillater maks 11 tegn). Uten emoji får hver SMS-del plass til 153 tegn i stedet for 67, og det blir billigere. Stedet fra finneren vaskes med `gsm()`, så et tegn som «, ’ eller en emoji ikke gjør hele SMS-en dyrere. Med et kort sted (f.eks. «Kringsjå skole») er SMS-en 268 tegn = 2 deler; stedet kan være ca. 50 tegn før det blir 3 deler.
 
 ## Endre en serverfunksjon
 
