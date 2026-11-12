@@ -126,10 +126,6 @@ h1 + .felt,.lapp-bilde[hidden] + .felt{margin-top:0}
 .rad-tekst small{font-size:13px;font-weight:700}
 .rad-tekst strong{font-size:17px;font-weight:800;overflow-wrap:anywhere}
 .endre{font-size:15px;font-weight:700;padding:10px 4px;border:0;background:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;flex-shrink:0}
-.sms-vis{margin-top:18px}
-.sms-vis summary{cursor:pointer;font-size:15px;font-weight:700;text-decoration:underline;text-underline-offset:3px;list-style:none;padding:8px 0}
-.sms-vis summary::-webkit-details-marker{display:none}
-.sms-tekst{white-space:pre-wrap;background:#fff;border:1px solid var(--linje);border-radius:16px;padding:14px 16px;font-size:15px;line-height:1.45;margin-top:6px}
 
 /* ── Takk og Om ── */
 .midt{display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:min(110px,10dvh);gap:16px}
@@ -324,11 +320,6 @@ h1 + .felt,.lapp-bilde[hidden] + .felt{margin-top:0}
         <button type="button" class="endre" onclick="vis('nummer')">Endre</button>
       </div>
     </div>
-    <!-- Forhåndsvisning av SMS-en (buildSmsText). Den ekte teksten lages på serveren. -->
-    <details class="sms-vis">
-      <summary>Se SMS-en eieren får</summary>
-      <div class="sms-tekst" id="sms-preview-text">–</div>
-    </details>
     <div class="bunn"><div class="bunn-inner">
       <button type="button" class="knapp" id="send-btn" onclick="sendSMS()">Send SMS til eieren</button>
     </div></div>
@@ -937,9 +928,6 @@ function goToSummary() {
   }
 
   state.specificPlace = state.placeName;
-  const smsTxt = buildSmsText();
-  document.getElementById('sms-preview-text').textContent = smsTxt;
-  state.smsText = smsTxt;
 
   vis('send');
 }
