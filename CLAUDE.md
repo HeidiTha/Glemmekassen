@@ -27,7 +27,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 4. **Instruksjonene til Claude ligger på serveren**, i `PROMPTS` i `supabase/functions/claude-proxy/index.ts`. Appen sender bare navnet på oppgaven (`ocr`, `item`). `live_ocr` ligger fortsatt på serveren, men appen bruker den ikke lenger. Nye oppgaver må legges til der. Modellen er Claude Haiku 5.5 (`claude-haiku-5-5`) – den billigste, og god nok til å lese nummer og farge.
 5. **Tekst fra brukere eller lenker settes inn med `textContent`, aldri `innerHTML`.**
 6. **Bilder lastes opp uten `x-upsert`** og med tilfeldig navn (`crypto.randomUUID()`). Bøtta tillater ikke listing.
-7. **Ikke lagre telefonnummeret** – heller ikke som «hash». Personvernteksten i Om-visningen i `hittegods.html` («Telefonnummeret lagres ikke. Bilde og sted slettes etter ett år.» og hele teksten under «Les mer om personvern») må stemme med det koden faktisk gjør.
+7. **Ikke lagre telefonnummeret** – heller ikke som «hash». Personvernteksten i Om-visningen i `hittegods.html` (den korte teksten under «Personvern» og hele teksten under «Les mer om personvern») må stemme med det koden faktisk gjør.
 
 ## Grenser og opprydding
 
