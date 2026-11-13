@@ -42,7 +42,7 @@ h1{margin:40px 0 0;font-size:26px;font-weight:800;line-height:1.2}
     <input id="kode" name="kode" type="text" inputmode="text" autocapitalize="characters" autocomplete="one-time-code" autocorrect="off" spellcheck="false" maxlength="6" required>
   </div>
   <p class="feil" id="feil" role="alert"></p>
-  <div class="bunn"><button class="btn" id="knapp" type="submit">Se plagget ditt</button></div>
+  <div class="bunn"><button class="btn" id="knapp" type="submit">Se hva som er funnet</button></div>
 </form>
 </main><script>
 const API = 'https://jyajkriknplrhsxustpf.supabase.co/functions/v1/glemmekassen-sms';
@@ -90,7 +90,7 @@ document.getElementById('skjema').addEventListener('submit', async (e) => {
     location.href = '../eier.html?kode=' + encodeURIComponent(kode);
   } catch (err) {
     feil.textContent = err.message === 'Failed to fetch' ? 'Får ikke kontakt. Sjekk nettet og prøv igjen.' : err.message;
-    knapp.disabled = false; knapp.textContent = 'Se plagget ditt'; felt.focus();
+    knapp.disabled = false; knapp.textContent = 'Se hva som er funnet'; felt.focus();
   }
 });
 </script></body></html>
