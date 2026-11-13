@@ -1920,32 +1920,41 @@ function goToSummary() {
 // Hvordan hver kategori skrives i SMS-en. MÅ HOLDES LIK SMS_ORD i
 // supabase/functions/glemmekassen-sms/index.ts – det er serveren som sender den ekte SMS-en.
 const SMS_ORD = {
-  'jakke':        { ord: 'en jakke',               din: 'din',  den: 'den' },
-  'genser':       { ord: 'en genser',              din: 'din',  den: 'den' },
-  'bukse':        { ord: 'en bukse',               din: 'din',  den: 'den' },
-  'sko':          { ord: 'et par sko',             din: 'dine', den: 'dem' },
-  'sekk':         { ord: 'en sekk',                din: 'din',  den: 'den' },
-  'lue/skjerf':   { ord: 'en lue eller et skjerf', din: 'din',  den: 'den' },
-  'sportsutstyr': { ord: 'noe sportsutstyr',       din: 'ditt', den: 'det' },
-  'vannflaske':   { ord: 'en vannflaske',          din: 'din',  den: 'den' },
-  'annet':        { ord: 'en gjenstand',           din: 'din',  den: 'den' },
+  'jakke':        { ord: 'en jakke',               den: 'den' },
+  'genser':       { ord: 'en genser',              den: 'den' },
+  'bukse':        { ord: 'en bukse',               den: 'den' },
+  'sko':          { ord: 'et par sko',             den: 'de' },
+  'sekk':         { ord: 'en sekk',                den: 'den' },
+  'lue/skjerf':   { ord: 'en lue eller et skjerf', den: 'den' },
+  'sportsutstyr': { ord: 'noe sportsutstyr',       den: 'det' },
+  'vannflaske':   { ord: 'en vannflaske',          den: 'den' },
+  'annet':        { ord: 'en gjenstand',           den: 'den' },
 };
+
+// Bare tegn fra det vanlige SMS-alfabetet (GSM 7-bit) – samme som gsm() på serveren.
+const GSM_TEGN = "@£$¥èéùìòÇØøÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà\n";
+function gsm(tekst) {
+  return tekst
+    .replace(/[\u2018\u2019\u00b4`]/g, "'").replace(/[\u201c\u201d\u00ab\u00bb]/g, '"').replace(/[\u2013\u2014]/g, "-")
+    .split("").map((t) => GSM_TEGN.includes(t) ? t : t.normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
+    .filter((t) => t.length === 1 && GSM_TEGN.includes(t)).join("")
+    .replace(/\s+/g, " ").trim();
+}
 
 // Bare forhåndsvisning – serveren lager den ekte SMS-en med samme tekst (smsText()).
 // Koden lages først når SMS-en sendes, så her vises en eksempelkode.
 function buildSmsText(kode) {
   const o = SMS_ORD[state.itemType] || SMS_ORD['annet'];
-  const farge = (state.itemColor || '').trim();
-  const ting = farge ? `${o.ord} (${farge})` : o.ord;
-  const hvor = (state.locationText || '').trim() || 'et sted i nærheten';
+  const k = kode || 'BTKS';
+  const hvor = gsm((state.locationText || '').trim().slice(0, 80)) || 'et sted i nærheten';
   const hvorMedPreposisjon = /^(på|i|ved|hos)\s/i.test(hvor) ? hvor : `på ${hvor}`;
-  return `Hei! Noen har funnet ${ting} som kan være ${o.din}, ${hvorMedPreposisjon}.
+  return `Hei! Noen har funnet ${o.ord} med ditt nummer på navnelappen ${hvorMedPreposisjon}.
 
-Koden din er ${kode || '482915'}. Se bilde og kart på glemmekassen.com/kode
+Trykk her for å se bilde og hvor ${o.den} ligger: glemmekassen.com/k?${k}
 
-Føl deg trygg: Glemmekassen ber aldri om penger, passord eller BankID.
+Alternativt gå inn på glemmekassen.com og skriv koden ${k}.
 
-Fikk du ${o.den} igjen? Send en liten hilsen til Glemmekassen på Instagram @glemmekass1`;
+Hilsen Heidi Thaulow og Nora Brath Ingerø i Glemmekassen`;
 }
 
 // ── Send SMS ───────────────────────────────────────────

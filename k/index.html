@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
+<title>Glemmekassen</title>
+<!-- glemmekassen.com/k?BTKS – lenken i SMS-en. Sender eieren rett videre til eiersiden (../eier.html?kode=BTKS).
+     Tåler også ?kode=BTKS, ?k=BTKS og små bokstaver. Uten gyldig kode kommer man til kodesiden (../kode/). -->
+<style>body{margin:0;background:#FAF8F4;color:#1F3A5F;font-family:Nunito,system-ui,-apple-system,'Segoe UI',Arial,sans-serif}
+p{max-width:340px;margin:40vh auto 0;padding:0 24px;text-align:center;font-size:17px;font-weight:700}a{color:#1F3A5F}</style>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var kode = params.get('kode') || params.get('k') || '';
+  // Vanligst: glemmekassen.com/k?BTKS – da er hele spørringen selve koden
+  if (!kode && location.search.indexOf('=') < 0) {
+    try { kode = decodeURIComponent(location.search.slice(1)); } catch (e) { kode = ''; }
+  }
+  kode = kode.toUpperCase().replace(/[\s-]/g, '');
+  // 4 bokstaver (nye koder), 6 siffer eller 6 bokstaver/tall (eldre koder). Serveren sjekker koden ordentlig.
+  var gyldig = /^[A-Z]{4}$/.test(kode) || /^[0-9]{6}$/.test(kode) || /^[A-Z0-9]{6}$/.test(kode);
+  // replace: /k?BTKS blir ikke liggende igjen i historikken, så «tilbake» ikke sender eieren hit på nytt
+  location.replace(gyldig ? '../eier.html?kode=' + encodeURIComponent(kode) : '../kode/');
+})();
+</script>
+</head><body>
+<noscript><p><a href="../kode/">Trykk her for å skrive inn koden fra SMS-en</a></p></noscript>
+</body></html>
