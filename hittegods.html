@@ -131,10 +131,10 @@ h1 + .felt,.lapp-bilde[hidden] + .felt{margin-top:0}
 .midt{display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:min(110px,10dvh);gap:16px}
 .rund{width:88px;height:88px;border-radius:50%;background:var(--myk-gul);display:flex;align-items:center;justify-content:center}
 .midt h1{margin:8px 0 0;font-size:28px}
-.teller{margin-top:8px;display:flex;align-items:baseline;gap:8px;background:#fff;border:1px solid var(--linje);border-radius:16px;padding:14px 22px}
-.teller b{font-size:30px;font-weight:800}
-.teller span{font-size:17px;font-weight:700}
-.teller-hjem{font-size:16px;font-weight:700;margin:0}
+.teller{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:320px}
+.teller>div{background:#fff;border:1px solid var(--linje);border-radius:16px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.teller b{font-size:32px;font-weight:800;line-height:1.1}
+.teller span{font-size:15px;font-weight:700;line-height:1.25}
 .hjem-tips{margin-top:22px;background:#fff;border:1px solid var(--linje);border-radius:18px;padding:16px;text-align:left;width:100%}
 .hjem-tips-tittel{font-size:16px;font-weight:800;margin-bottom:10px}
 .hjem-tips .knapp{height:48px;font-size:16px}
@@ -236,31 +236,31 @@ h1 + .felt,.lapp-bilde[hidden] + .felt{margin-top:0}
       <div class="melding" id="phone-hint" aria-live="polite"></div>
     </div>
     <div class="bunn"><div class="bunn-inner">
-      <button type="button" class="knapp" id="confirm-next" onclick="validatePhone()">Neste: Ta bilde av plagget</button>
+      <button type="button" class="knapp" id="confirm-next" onclick="validatePhone()">Neste: Ta bilde av gjenstanden</button>
       <button type="button" class="lenke-knapp" id="ta-nytt-lapp" onclick="startNavnelapp()">Ta nytt bilde</button>
     </div></div>
   </section>
 
   <!-- STEG 2a: Ta bilde av plagget -->
   <section class="skjerm" id="skjerm-plagg" data-steg="2" hidden>
-    <h1>Ta bilde av plagget</h1>
+    <h1>Ta bilde av gjenstanden</h1>
     <div class="kamera" id="plagg-kamera">
       <video id="item-video" autoplay playsinline muted></video>
       <canvas id="item-canvas"></canvas>
-      <div class="kamera-ramme plagg">Hele plagget her</div>
+      <div class="kamera-ramme plagg">Hele gjenstanden her</div>
       <div class="kamera-uten" id="item-cam-placeholder">
         <span>Kameraet er ikke tilgjengelig</span>
         <button type="button" onclick="document.getElementById('item-file-input').click()">Velg bilde fra telefonen</button>
       </div>
     </div>
     <input type="file" id="item-file-input" accept="image/*" onchange="handleItemFileCapture(event)">
-    <div class="utloser-rad"><button type="button" class="utloser" id="item-capture-btn" onclick="captureItemPhoto()" aria-label="Ta bilde av plagget"><span></span></button></div>
+    <div class="utloser-rad"><button type="button" class="utloser" id="item-capture-btn" onclick="captureItemPhoto()" aria-label="Ta bilde av gjenstanden"><span></span></button></div>
     <div class="under-utloser"><button type="button" class="lenke-knapp understrek" id="item-skip" onclick="hoppOverBilde()">Hopp over bildet</button></div>
   </section>
 
-  <!-- STEG 2b: Hva slags plagg? Claude foreslår, ett trykk endrer. -->
+  <!-- STEG 2b: Hva slags gjenstand? Claude foreslår, ett trykk endrer. -->
   <section class="skjerm" id="skjerm-kategori" data-steg="2" hidden>
-    <h1>Hva slags plagg?</h1>
+    <h1>Hva slags gjenstand?</h1>
     <div class="plagg-bilde" id="plagg-bilde">
       <svg id="plagg-tom" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#8A97A6" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3.5L6 5 3.5 9l2 1.5L7 9v11.5h10V9l1.5 1.5 2-1.5L18 5l-3-1.5c-.5 1.4-1.6 2.2-3 2.2s-2.5-.8-3-2.2z"/></svg>
       <div class="jobber" id="plagg-jobber" aria-live="polite"><span class="snurr" aria-hidden="true"></span><span>Ser på bildet …</span></div>
@@ -308,7 +308,7 @@ h1 + .felt,.lapp-bilde[hidden] + .felt{margin-top:0}
     <div class="oversikt">
       <div class="rad">
         <div class="rad-bilde" id="sum-bilde"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#8A97A6" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3.5L6 5 3.5 9l2 1.5L7 9v11.5h10V9l1.5 1.5 2-1.5L18 5l-3-1.5c-.5 1.4-1.6 2.2-3 2.2s-2.5-.8-3-2.2z"/></svg></div>
-        <div class="rad-tekst"><small>Plagg</small><strong id="sum-item">–</strong></div>
+        <div class="rad-tekst"><small>Gjenstand</small><strong id="sum-item">–</strong></div>
         <button type="button" class="endre" onclick="vis('kategori')">Endre</button>
       </div>
       <div class="rad">
@@ -331,8 +331,10 @@ h1 + .felt,.lapp-bilde[hidden] + .felt{margin-top:0}
       <span class="rund"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1F3A5F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
       <h1>SMS er sendt</h1>
       <!-- Teller: funn-id-ene ligger i glemmekassen_mine_funn på denne telefonen -->
-      <div class="teller" id="takk-teller" hidden><b id="takk-antall">1</b><span>plagg registrert av deg</span></div>
-      <p class="teller-hjem" id="takk-hjem" hidden></p>
+      <div class="teller" id="takk-teller" hidden>
+        <div><b id="takk-antall">1</b><span>registrert av deg</span></div>
+        <div><b id="takk-hjem">0</b><span>har kommet hjem</span></div>
+      </div>
       <!-- Tips: legg appen på hjemskjermen. Vises på mobil til man sier «Nei takk» eller har lagt den til. -->
       <div class="hjem-tips" id="hjem-tips" hidden>
         <div class="hjem-tips-tittel">Legg Glemmekassen på hjemskjermen</div>
@@ -352,7 +354,7 @@ h1 + .felt,.lapp-bilde[hidden] + .felt{margin-top:0}
   <!-- OM GLEMMEKASSEN -->
   <section class="skjerm om" id="skjerm-om" data-steg="0" hidden>
     <h1>Om Glemmekassen</h1>
-    <p>Vi er fire damer som ønsker å bidra positivt til miljøet. Hvert plagg som kommer hjem, er et plagg mindre som må kjøpes nytt.</p>
+    <p>Vi er fire damer som ønsker å bidra positivt til miljøet. Hver gjenstand som kommer hjem, er en gjenstand mindre som må kjøpes nytt.</p>
     <h2>Personvern</h2>
     <p>Telefonnummeret lagres ikke. Bilde og sted slettes etter ett år.</p>
     <!-- Hele personvernteksten. Den må stemme med det koden faktisk gjør (se CLAUDE.md, regel 7). -->
@@ -850,7 +852,7 @@ function visPlaggBilde() {
   document.getElementById('plagg-tom').style.display = state.itemPhotoDataUrl ? 'none' : '';
   if (state.itemPhotoDataUrl) {
     const img = document.createElement('img');
-    img.src = state.itemPhotoDataUrl; img.alt = 'Bildet av plagget';
+    img.src = state.itemPhotoDataUrl; img.alt = 'Bildet av gjenstanden';
     boks.prepend(img);
   }
 }
@@ -1065,13 +1067,12 @@ function lagreFunn(id) {
 function sistKjentHjem() {
   try { return Math.max(0, parseInt(localStorage.getItem(HJEM_KEY) || '0', 10) || 0); } catch (e) { return 0; }
 }
-// Takk-siden: «13 plagg registrert av deg» (og «7 har kommet hjem» når eiere har trykket «Jeg har hentet den»)
+// Takk-siden: to tall side om side – «13 registrert av deg» og «7 har kommet hjem»
+// (hjem = eiere som har trykket «Jeg har hentet den»)
 function visTeller(antall, hjem) {
   document.getElementById('takk-teller').hidden = antall < 1;
   document.getElementById('takk-antall').textContent = String(antall);
-  const hjemTekst = document.getElementById('takk-hjem');
-  hjemTekst.hidden = !(hjem > 0);
-  hjemTekst.textContent = hjem > 0 ? `${hjem} har kommet hjem igjen` : '';
+  document.getElementById('takk-hjem').textContent = String(hjem);
   visHjemTips(antall);
 }
 

@@ -13,7 +13,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 | Gammel bildeside | `bilde.html` – bare for eldre SMS-lenker | glemmekassen.com/bilde.html |
 | Bilder | Supabase Storage, bøtta `bilder` | Supabase-prosjekt `jyajkriknplrhsxustpf` |
 | Funn bak koden | tabellen `glemmekassen_shortlink_test` (kolonnene `kode`, `farge`, `hentet_at` – se `supabase/sql/kode-og-hentet.sql`; `kommune`, `bydel`, `anonymisert_at` – se `supabase/sql/statistikk-etter-ett-aar.sql`) | Supabase |
-| Finnerens teller | På takk-siden etter sendt SMS: «12 plagg registrert av deg» (og «7 har kommet hjem igjen»). Telefonen husker funn-id-ene sine (`glemmekassen_mine_funn` i localStorage), serveren svarer bare med antall hentet (`action: "status"`) | `hittegods.html` + `glemmekassen-sms` |
+| Finnerens teller | På takk-siden etter sendt SMS: to tall side om side, «12 registrert av deg» og «7 har kommet hjem». Appen sier «gjenstand», ikke «plagg», fordi mye av det som finnes er flasker, sekker og sko. Telefonen husker funn-id-ene sine (`glemmekassen_mine_funn` i localStorage), serveren svarer bare med antall hentet (`action: "status"`) | `hittegods.html` + `glemmekassen-sms` |
 | Global teller | tabellen `counter` + funksjonen `increment_counter` | Supabase | (brukes ikke av appen nå)
 | SMS | serverfunksjonen `glemmekassen-sms` → Sveve | `supabase/functions/glemmekassen-sms` |
 | Lese nummer / gjenkjenne gjenstand | serverfunksjonen `claude-proxy` → Anthropic | `supabase/functions/claude-proxy` |
