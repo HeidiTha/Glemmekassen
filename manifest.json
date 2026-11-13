@@ -4,8 +4,8 @@
   "description": "Ta bilde av navnelappen og varsle eieren på sekunder",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f5f0e6",
-  "theme_color": "#203c61",
+  "background_color": "#FAF8F4",
+  "theme_color": "#FAF8F4",
   "orientation": "portrait",
   "icons": [
     {

@@ -14,7 +14,7 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 | Gammel bildeside | `bilde.html` – bare for eldre SMS-lenker | glemmekassen.com/bilde.html |
 | Bilder | Supabase Storage, bøtta `bilder` | Supabase-prosjekt `jyajkriknplrhsxustpf` |
 | Funn bak koden | tabellen `glemmekassen_shortlink_test` (kolonnene `kode`, `farge`, `hentet_at` – se `supabase/sql/kode-og-hentet.sql`; `kommune`, `bydel`, `anonymisert_at` – se `supabase/sql/statistikk-etter-ett-aar.sql`) | Supabase |
-| Finnerens teller | «Du har registrert 12 plagg · 7 kom hjem». Telefonen husker funn-id-ene sine (`glemmekassen_mine_funn` i localStorage), serveren svarer bare med antall hentet (`action: "status"`) | `hittegods.html` + `glemmekassen-sms` |
+| Finnerens teller | På takk-siden etter sendt SMS: to tall side om side, «12 registrert av deg» og «7 har kommet hjem». Appen sier «gjenstand», ikke «plagg», fordi mye av det som finnes er flasker, sekker og sko. Telefonen husker funn-id-ene sine (`glemmekassen_mine_funn` i localStorage), serveren svarer bare med antall hentet (`action: "status"`) | `hittegods.html` + `glemmekassen-sms` |
 | Global teller | tabellen `counter` + funksjonen `increment_counter` | Supabase | (brukes ikke av appen nå)
 | SMS | serverfunksjonen `glemmekassen-sms` → Sveve | `supabase/functions/glemmekassen-sms` |
 | Lese nummer / gjenkjenne gjenstand | serverfunksjonen `claude-proxy` → Anthropic | `supabase/functions/claude-proxy` |
@@ -28,13 +28,14 @@ Den vedlikeholdes av et lite team uten utviklerbakgrunn, med hjelp fra AI. Hold 
 4. **Instruksjonene til Claude ligger på serveren**, i `PROMPTS` i `supabase/functions/claude-proxy/index.ts`. Appen sender bare navnet på oppgaven (`ocr`, `item`). `live_ocr` ligger fortsatt på serveren, men appen bruker den ikke lenger. Nye oppgaver må legges til der. Modellen er Claude Haiku 5.5 (`claude-haiku-5-5`) – den billigste, og god nok til å lese nummer og farge.
 5. **Tekst fra brukere eller lenker settes inn med `textContent`, aldri `innerHTML`.**
 6. **Bilder lastes opp uten `x-upsert`** og med tilfeldig navn (`crypto.randomUUID()`). Bøtta tillater ikke listing.
-7. **Ikke lagre telefonnummeret** – heller ikke som «hash». Personvernteksten nederst i `hittegods.html` må stemme med det koden faktisk gjør.
+7. **Ikke lagre telefonnummeret** – heller ikke som «hash». Personvernteksten i Om-visningen i `hittegods.html` (den korte teksten under «Personvern» og hele teksten under «Les mer om personvern») må stemme med det koden faktisk gjør.
 
 ## Grenser og opprydding
 
 - Maks 100 SMS totalt per døgn (`MAX_SMS_PER_DAY`), og maks 5 per minutt / 50 per døgn per IP.
 - Maks 500 kall til Claude totalt per døgn (`MAX_AI_CALLS_PER_DAY` i `claude-proxy`), talt i tabellen `ai_bruk` (se `supabase/sql/ai-dagsgrense.sql`).
-- Nummeret leses bare når brukeren trykker på kameraknappen (`capturePhoto()` i `hittegods.html`): ett bilde = ett kall til Claude. Ingen automatisk skanning – hvert kall koster penger.
+- Nummeret leses bare når brukeren trykker på utløserknappen (`capturePhoto()` i `hittegods.html`): ett bilde = ett kall til Claude. Bildet av plagget gir også ett kall (`recognizeItem()`). Ingen automatisk skanning – hvert kall koster penger.
+- Utseende: lys stil fra designtavlen (november 2026). Farger: bakgrunn #FAF8F4, marineblå #1F3A5F, linjer #E6E1D8/#CFC8BB, gult #E8B54D bare i fremdriftslinjen. Skriften Nunito, logoene og ikonet ligger i `felles/` (ingen ting lastes fra Google). Ingen grå forklaringstekster under overskriftene.
 - Hvis lesing av nummer slutter å virke: sjekk først kreditten på console.anthropic.com (Plans & Billing).
 - Etter 365 dager (`KEEP_DAYS`) slettes bildet (i Storage og `bilde_url`), stedet (`stedsnavn`), kartposisjonen (`lat`, `lng`) og koden (`kode`), og `anonymisert_at` settes. Raden blir liggende med bare statistikk: `gjenstand`, `farge`, `kommune`, `bydel`, `created_at` og `hentet_at`. Oppryddingen (`cleanupOld()` i `glemmekassen-sms`) kjøres hver gang en SMS sendes, og tømmer maks 200 funn per gang.
 - Et tømt funn skal aldri kunne åpnes: alle oppslag på kode eller id i `glemmekassen-sms` må ha `anonymisert_at=is.null`. Nye felt som kan peke på en person (sted, bilde, tekst fra finneren), må tømmes i `cleanupOld()`.
